@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compilação — Photo Face Mod</title>
+<meta name="description" content="Como buildar o Photo Face Mod no Linux: ambiente Python, Node.js, geração do .ts4script e do .package.">
+<style>
+  :root{
+    --bg:#faf8f3;
+    --bg-elevated:#ffffff;
+    --bg-alt:#f1ece0;
+    --text:#2b2620;
+    --text-dim:#6c6152;
+    --accent:#b0492c;
+    --accent-strong:#8a3820;
+    --accent-2:#3d6e58;
+    --border:#e0d6c2;
+    --code-bg:#2b2620;
+    --code-text:#f1ece0;
+    --warn-bg:#fdf1dd;
+    --warn-border:#d79a3d;
+    --warn-text:#5c3f10;
+    --shadow:0 1px 3px rgba(40,30,10,0.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#181510;
+      --bg-elevated:#211d17;
+      --bg-alt:#262019;
+      --text:#ece5d6;
+      --text-dim:#a89a80;
+      --accent:#e2814f;
+      --accent-strong:#f3a06a;
+      --accent-2:#6cbfa0;
+      --border:#3a3226;
+      --code-bg:#100e0a;
+      --code-text:#e8e0cf;
+      --warn-bg:#332a17;
+      --warn-border:#8a6a30;
+      --warn-text:#e2c07a;
+      --shadow:0 1px 3px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#faf8f3; --bg-elevated:#ffffff; --bg-alt:#f1ece0; --text:#2b2620; --text-dim:#6c6152;
+    --accent:#b0492c; --accent-strong:#8a3820; --accent-2:#3d6e58; --border:#e0d6c2;
+    --code-bg:#2b2620; --code-text:#f1ece0; --warn-bg:#fdf1dd; --warn-border:#d79a3d; --warn-text:#5c3f10;
+    --shadow:0 1px 3px rgba(40,30,10,0.10);
+  }
+  :root[data-theme="dark"]{
+    --bg:#181510; --bg-elevated:#211d17; --bg-alt:#262019; --text:#ece5d6; --text-dim:#a89a80;
+    --accent:#e2814f; --accent-strong:#f3a06a; --accent-2:#6cbfa0; --border:#3a3226;
+    --code-bg:#100e0a; --code-text:#e8e0cf; --warn-bg:#332a17; --warn-border:#8a6a30; --warn-text:#e2c07a;
+    --shadow:0 1px 3px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  header.site{position:sticky;top:0;z-index:10;background:var(--bg-elevated);border-bottom:1px solid var(--border);}
+  .header-inner{max-width:980px;margin:0 auto;padding:0.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+  .brand{font-weight:700;color:var(--text);text-decoration:none;font-size:1.05rem;display:flex;align-items:center;gap:0.5rem;}
+  .tag{display:inline-block;background:var(--bg-alt);border:1px solid var(--border);border-radius:999px;padding:0.1rem 0.6rem;font-size:0.75em;color:var(--text-dim);font-weight:500;}
+  nav.sitenav{display:flex;gap:1.1rem;flex-wrap:wrap;}
+  nav.sitenav a{color:var(--text-dim);text-decoration:none;padding-bottom:3px;border-bottom:2px solid transparent;font-size:0.95rem;}
+  nav.sitenav a:hover{color:var(--text);}
+  nav.sitenav a[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+  .theme-toggle{background:var(--bg-alt);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.85rem;cursor:pointer;}
+  .theme-toggle:hover{border-color:var(--accent);}
+  main{max-width:840px;margin:0 auto;padding:2.5rem 1.25rem 5rem;}
+  h1{font-size:2.1rem;margin:0 0 0.4rem;}
+  h2{font-size:1.5rem;margin-top:2.6rem;border-bottom:1px solid var(--border);padding-bottom:0.4rem;}
+  h3{font-size:1.15rem;margin-top:1.8rem;}
+  h4{font-size:1rem;margin-top:1.4rem;}
+  p{margin:0.9rem 0;}
+  .lede{font-size:1.15rem;color:var(--text-dim);margin-top:0.2rem;}
+  a{color:var(--accent);}
+  a:hover{color:var(--accent-strong);}
+  code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;font-size:0.88em;}
+  :not(pre)>code{background:var(--bg-alt);padding:0.15em 0.4em;border-radius:4px;}
+  pre{background:var(--code-bg);color:var(--code-text);padding:1rem 1.1rem;border-radius:8px;overflow-x:auto;font-size:0.85rem;line-height:1.5;}
+  pre code{background:none;padding:0;color:inherit;}
+  table{width:100%;border-collapse:collapse;margin:1.4rem 0;font-size:0.92rem;}
+  th,td{border:1px solid var(--border);padding:0.55rem 0.75rem;text-align:left;vertical-align:top;}
+  th{background:var(--bg-alt);}
+  .note,.warn{border-left:4px solid var(--accent-2);background:var(--bg-alt);padding:0.85rem 1.1rem;border-radius:0 8px 8px 0;margin:1.4rem 0;}
+  .warn{border-color:var(--warn-border);background:var(--warn-bg);color:var(--warn-text);}
+  .warn strong{color:inherit;}
+  ul,ol{padding-left:1.4rem;}
+  li{margin:0.35rem 0;}
+  .steps li{margin:0.6rem 0;}
+  footer.site{border-top:1px solid var(--border);margin-top:3rem;padding:2rem 1.25rem;color:var(--text-dim);font-size:0.88rem;}
+  footer.site .footer-inner{max-width:840px;margin:0 auto;}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="header-inner">
+    <a class="brand" href="index.html">📸 Photo Face Mod <span class="tag">The Sims 4</span></a>
+    <nav class="sitenav">
+      <a href="index.html">Início</a>
+      <a href="base-de-conhecimento.html">Base de Conhecimento</a>
+      <a href="compilacao.html" aria-current="page">Compilação</a>
+      <a href="instalacao.html">Instalação</a>
+      <a href="testes.html">Testes</a>
+    </nav>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Alternar tema claro/escuro">🌙 Tema escuro</button>
+  </div>
+</header>
+
+<main>
+  <h1>Compilação</h1>
+  <p class="lede">Como buildar o mod inteiramente no Linux. Nenhum artefato deste projeto é um binário nativo de Windows — "cross-compilar" aqui significa garantir bytecode Python compatível com a versão embutida no jogo e paths corretos, não gerar um <code>.exe</code>.</p>
+
+  <div class="note">
+    <strong>Por que não precisa de toolchain Windows de verdade:</strong> o <code>.ts4script</code> é um ZIP
+    com Python (cross-platform por natureza) e a companion tool roda em Node.js (também cross-platform). O
+    único ponto de atenção real é a <strong>versão do bytecode</strong> — ver <a href="#cpython37">seção
+    abaixo</a>.
+  </div>
+
+  <h2>Pré-requisitos</h2>
+  <h3>Python para o script mod</h3>
+  <p>
+    O jogo embute <strong>CPython 3.7.0</strong> (ver <a href="base-de-conhecimento.html#cpython">Base de
+    Conhecimento</a>). Para gerar bytecode compatível é preciso ter um interpretador 3.7.x disponível no
+    ambiente de build — não necessariamente como Python "default" do sistema:
+  </p>
+  <pre><code># via pyenv (recomendado — não interfere no Python do sistema)
+curl https://pyenv.run | bash
+pyenv install 3.7.17
+pyenv local 3.7.17   # dentro da raiz do repo, ou de src/photo_face_mod/
+
+# alternativa: imagem Docker oficial
+docker run --rm -v "$PWD:/work" -w /work python:3.7 python3 --version</code></pre>
+  <p>
+    Para desenvolvimento, testes e ferramentas auxiliares que <em>não</em> rodam dentro do jogo (ex.: pytest,
+    linters), um Python mais moderno (3.11+) é aceitável e mais confortável — só o passo final de geração do
+    <code>.pyc</code> embarcado no <code>.ts4script</code> precisa do interpretador 3.7.
+  </p>
+
+  <h3>Node.js para a companion tool</h3>
+  <pre><code># Node 18 LTS ou superior (requisito do Sims4Toolkit / S4TK)
+nvm install 18
+nvm use 18
+node --version
+
+cd companion/
+npm install</code></pre>
+
+  <h2 id="cpython37">A questão do bytecode CPython 3.7</h2>
+  <p>
+    O módulo padrão <code>compileall</code>/<code>py_compile</code> do Python só compila bytecode para a
+    <em>versão do próprio interpretador em execução</em> — não existe flag nativa de "compilar para outra
+    versão" a partir de um Python mais novo. Isso significa que, para produzir <code>.pyc</code> com o magic
+    number correto, o passo de compilação do build precisa <strong>efetivamente rodar sob um interpretador
+    3.7.x</strong> (via pyenv ou container Docker <code>python:3.7</code>), e não apenas "mirar" essa versão a
+    partir de um Python mais novo.
+  </p>
+  <pre><code># dentro do ambiente 3.7 (pyenv shell 3.7.17, ou dentro do container python:3.7):
+python3 -m compileall -b src/photo_face_mod/
+# gera os .pyc ao lado dos .py (flag -b = legacy naming, sem sufixo de versão no nome)</code></pre>
+  <div class="warn">
+    <strong>Erro comum:</strong> compilar com o Python "de sistema" (frequentemente 3.10+ em distros recentes)
+    produz um <code>.pyc</code> com magic number incompatível. O jogo carrega o mod sem erro aparente na hora
+    de ativar, mas falha ao tentar de fato executar o código — o sintoma típico é a tela de
+    <a href="instalacao.html#troubleshooting">"Last Exception"</a> ao entrar em uma partida.
+  </div>
+
+  <h2>Build completo</h2>
+  <p>
+    O build junta duas saídas independentes: o <code>.ts4script</code> (script mod) e o <code>.package</code>
+    (CC/CASP), a partir das pastas <code>src/photo_face_mod/</code>, <code>companion/</code> e
+    <code>packages/casp_template/</code>. Os passos, em ordem:
+  </p>
+  <ol class="steps">
+    <li>Compilar os módulos do script mod para bytecode 3.7 (seção anterior).</li>
+    <li>Zipar os <code>.pyc</code> resultantes com a extensão <code>.ts4script</code> (é um ZIP comum, sem
+      compressão extra necessária além da padrão do próprio zip).</li>
+    <li>Rodar a companion tool para produzir um <code>.package</code> de exemplo/placeholder (útil para
+      testes de integridade — o <code>.package</code> "de verdade" de cada jogador é gerado sob demanda a
+      partir da foto dele, ver <a href="instalacao.html">Instalação</a>).</li>
+  </ol>
+  <pre><code># exemplo do fluxo (consulte o Makefile/README na raiz do repo para os
+# nomes exatos dos alvos e scripts, que podem evoluir com o projeto):
+
+# 1) bytecode 3.7
+pyenv shell 3.7.17
+python3 -m compileall -b src/photo_face_mod/
+
+# 2) empacotar .ts4script
+cd src/photo_face_mod/
+zip -r ../../build/photofacemod.ts4script . -i '*.pyc'
+cd -
+
+# 3) companion tool: gerar .package de exemplo a partir do template CASP
+cd companion/
+npm run build          # compila a companion tool (TypeScript → JS, se aplicável)
+node dist/cli.js pack --template ../packages/casp_template --photo example.png --out ../build/example.package
+cd -</code></pre>
+  <p>
+    Os nomes exatos de scripts (<code>npm run build</code>, alvos de Makefile etc.) devem ser confirmados no
+    <code>package.json</code> da <code>companion/</code> e em eventual <code>Makefile</code>/README na raiz do
+    repositório — esta página descreve o <em>fluxo conceitual</em> do build, que se mantém estável mesmo que
+    os comandos concretos evoluam.
+  </p>
+
+  <h2 id="casp-automacao">O CASP template e a automação via Wine</h2>
+  <p>
+    O acessório CAS base (<code>packages/casp_template/</code>) é criado no <strong>Sims4Studio</strong>, uma
+    ferramenta GUI em .NET sem CLI oficial. Isso é, por natureza, difícil de automatizar de forma 100%
+    confiável em CI. Duas vias documentadas:
+  </p>
+  <h3>Via 1 — automação experimental via Wine (CI)</h3>
+  <p>
+    O pipeline de CI tenta rodar o Sims4Studio sob <strong>Wine + .NET 6 Desktop Runtime</strong> em Linux,
+    disparando a geração/validação do template de forma headless. Isso é tratado como
+    <strong>best-effort</strong>: GUIs .NET sob Wine são notoriamente frágeis (diálogos modais inesperados,
+    dependências de runtime que mudam entre versões do Wine, timing de inicialização). Se essa automação
+    quebrar, ela não deve bloquear o build dos outros artefatos — apenas sinalizar que o template pode estar
+    desatualizado.
+  </p>
+  <h3>Via 2 — passo manual do mantenedor (fallback confiável)</h3>
+  <p>
+    Quando a automação não for confiável, o mantenedor gera/atualiza o template manualmente:
+  </p>
+  <ol>
+    <li>Abrir o Sims4Studio no Windows (ou Wine local, fora do CI, com controle manual).</li>
+    <li>Criar/editar o acessório de cabeça base seguindo a especificação em
+      <a href="base-de-conhecimento.html#casp-template">Base de Conhecimento</a> (slot de cabeça, sem
+      restrição de idade/gênero desnecessária, malha plana do tamanho de uma foto 4:3).</li>
+    <li>Exportar o <code>.package</code> resultante e substituir/commitar em
+      <code>packages/casp_template/</code>.</li>
+  </ol>
+  <p>
+    Esse passo é raro — só precisa se repetir se o template em si precisar mudar (ex.: ajustar o tamanho da
+    "plaquinha", trocar o slot de equipamento). O fluxo do dia a dia (uma foto nova por jogador) nunca toca o
+    Sims4Studio; passa só pela companion tool.
+  </p>
+
+  <h2>Notas de build cross-platform</h2>
+  <ul>
+    <li><strong>Case sensitivity:</strong> Linux é case-sensitive, Windows não. Nomes de arquivo/pasta dentro
+      do <code>.ts4script</code>/<code>.package</code> devem usar a mesma caixa consistentemente para evitar
+      surpresas quando o jogador testar no Windows.</li>
+    <li><strong>Separadores de path:</strong> usar sempre <code>/</code> nos scripts de build e dentro dos
+      ZIPs — o formato ZIP em si já normaliza isso, mas scripts Python/Node que manipulam paths devem evitar
+      montar strings de path na mão com <code>\</code>.</li>
+    <li><strong>Line endings:</strong> não é relevante para <code>.pyc</code>/binários, mas vale manter
+      <code>.gitattributes</code>/config do editor consistente para os fontes <code>.py</code>/<code>.ts</code>.</li>
+  </ul>
+
+  <p>Depois de buildar, veja <a href="testes.html">Testes</a> para validar os artefatos automaticamente antes
+  de instalar no jogo, e <a href="instalacao.html">Instalação</a> para o passo final no Windows.</p>
+</main>
+
+<footer class="site">
+  <div class="footer-inner">
+    <p>Photo Face Mod — mod não-oficial para The Sims 4. Não afiliado à Electronic Arts/Maxis.</p>
+    <p>Repositório: <a href="https://github.com/rpagliuca/sims4-photo-face-mod">github.com/rpagliuca/sims4-photo-face-mod</a></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  function current(){
+    var attr = root.getAttribute('data-theme');
+    if (attr) return attr;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateLabel(){
+    var btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    btn.textContent = current() === 'dark' ? '☀️ Tema claro' : '🌙 Tema escuro';
+  }
+  var saved = localStorage.getItem('pfm-theme');
+  if (saved) root.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', function(){
+    updateLabel();
+    var btn = document.getElementById('theme-toggle');
+    if (btn) {
+      btn.addEventListener('click', function(){
+        var next = current() === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('pfm-theme', next);
+        updateLabel();
+      });
+    }
+  });
+})();
+</script>
+</body>
+</html>

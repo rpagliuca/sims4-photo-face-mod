@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instalação — Photo Face Mod</title>
+<meta name="description" content="Onde colocar os arquivos do Photo Face Mod no Windows e como gerar o .package da sua foto.">
+<style>
+  :root{
+    --bg:#faf8f3;
+    --bg-elevated:#ffffff;
+    --bg-alt:#f1ece0;
+    --text:#2b2620;
+    --text-dim:#6c6152;
+    --accent:#b0492c;
+    --accent-strong:#8a3820;
+    --accent-2:#3d6e58;
+    --border:#e0d6c2;
+    --code-bg:#2b2620;
+    --code-text:#f1ece0;
+    --warn-bg:#fdf1dd;
+    --warn-border:#d79a3d;
+    --warn-text:#5c3f10;
+    --shadow:0 1px 3px rgba(40,30,10,0.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#181510;
+      --bg-elevated:#211d17;
+      --bg-alt:#262019;
+      --text:#ece5d6;
+      --text-dim:#a89a80;
+      --accent:#e2814f;
+      --accent-strong:#f3a06a;
+      --accent-2:#6cbfa0;
+      --border:#3a3226;
+      --code-bg:#100e0a;
+      --code-text:#e8e0cf;
+      --warn-bg:#332a17;
+      --warn-border:#8a6a30;
+      --warn-text:#e2c07a;
+      --shadow:0 1px 3px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#faf8f3; --bg-elevated:#ffffff; --bg-alt:#f1ece0; --text:#2b2620; --text-dim:#6c6152;
+    --accent:#b0492c; --accent-strong:#8a3820; --accent-2:#3d6e58; --border:#e0d6c2;
+    --code-bg:#2b2620; --code-text:#f1ece0; --warn-bg:#fdf1dd; --warn-border:#d79a3d; --warn-text:#5c3f10;
+    --shadow:0 1px 3px rgba(40,30,10,0.10);
+  }
+  :root[data-theme="dark"]{
+    --bg:#181510; --bg-elevated:#211d17; --bg-alt:#262019; --text:#ece5d6; --text-dim:#a89a80;
+    --accent:#e2814f; --accent-strong:#f3a06a; --accent-2:#6cbfa0; --border:#3a3226;
+    --code-bg:#100e0a; --code-text:#e8e0cf; --warn-bg:#332a17; --warn-border:#8a6a30; --warn-text:#e2c07a;
+    --shadow:0 1px 3px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  header.site{position:sticky;top:0;z-index:10;background:var(--bg-elevated);border-bottom:1px solid var(--border);}
+  .header-inner{max-width:980px;margin:0 auto;padding:0.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+  .brand{font-weight:700;color:var(--text);text-decoration:none;font-size:1.05rem;display:flex;align-items:center;gap:0.5rem;}
+  .tag{display:inline-block;background:var(--bg-alt);border:1px solid var(--border);border-radius:999px;padding:0.1rem 0.6rem;font-size:0.75em;color:var(--text-dim);font-weight:500;}
+  nav.sitenav{display:flex;gap:1.1rem;flex-wrap:wrap;}
+  nav.sitenav a{color:var(--text-dim);text-decoration:none;padding-bottom:3px;border-bottom:2px solid transparent;font-size:0.95rem;}
+  nav.sitenav a:hover{color:var(--text);}
+  nav.sitenav a[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+  .theme-toggle{background:var(--bg-alt);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.85rem;cursor:pointer;}
+  .theme-toggle:hover{border-color:var(--accent);}
+  main{max-width:840px;margin:0 auto;padding:2.5rem 1.25rem 5rem;}
+  h1{font-size:2.1rem;margin:0 0 0.4rem;}
+  h2{font-size:1.5rem;margin-top:2.6rem;border-bottom:1px solid var(--border);padding-bottom:0.4rem;}
+  h3{font-size:1.15rem;margin-top:1.8rem;}
+  h4{font-size:1rem;margin-top:1.4rem;}
+  p{margin:0.9rem 0;}
+  .lede{font-size:1.15rem;color:var(--text-dim);margin-top:0.2rem;}
+  a{color:var(--accent);}
+  a:hover{color:var(--accent-strong);}
+  code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;font-size:0.88em;}
+  :not(pre)>code{background:var(--bg-alt);padding:0.15em 0.4em;border-radius:4px;}
+  pre{background:var(--code-bg);color:var(--code-text);padding:1rem 1.1rem;border-radius:8px;overflow-x:auto;font-size:0.85rem;line-height:1.5;}
+  pre code{background:none;padding:0;color:inherit;}
+  table{width:100%;border-collapse:collapse;margin:1.4rem 0;font-size:0.92rem;}
+  th,td{border:1px solid var(--border);padding:0.55rem 0.75rem;text-align:left;vertical-align:top;}
+  th{background:var(--bg-alt);}
+  .note,.warn{border-left:4px solid var(--accent-2);background:var(--bg-alt);padding:0.85rem 1.1rem;border-radius:0 8px 8px 0;margin:1.4rem 0;}
+  .warn{border-color:var(--warn-border);background:var(--warn-bg);color:var(--warn-text);}
+  .warn strong{color:inherit;}
+  ul,ol{padding-left:1.4rem;}
+  li{margin:0.35rem 0;}
+  .steps li{margin:0.6rem 0;}
+  footer.site{border-top:1px solid var(--border);margin-top:3rem;padding:2rem 1.25rem;color:var(--text-dim);font-size:0.88rem;}
+  footer.site .footer-inner{max-width:840px;margin:0 auto;}
+  details{background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:0.8rem 1.1rem;margin:0.9rem 0;box-shadow:var(--shadow);}
+  details summary{cursor:pointer;font-weight:600;}
+  details[open] summary{margin-bottom:0.6rem;}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="header-inner">
+    <a class="brand" href="index.html">📸 Photo Face Mod <span class="tag">The Sims 4</span></a>
+    <nav class="sitenav">
+      <a href="index.html">Início</a>
+      <a href="base-de-conhecimento.html">Base de Conhecimento</a>
+      <a href="compilacao.html">Compilação</a>
+      <a href="instalacao.html" aria-current="page">Instalação</a>
+      <a href="testes.html">Testes</a>
+    </nav>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Alternar tema claro/escuro">🌙 Tema escuro</button>
+  </div>
+</header>
+
+<main>
+  <h1>Instalação</h1>
+  <p class="lede">Como colocar o mod no jogo no Windows, gerar o <code>.package</code> da sua própria foto e resolver os problemas mais comuns.</p>
+
+  <h2>Pasta de Mods do The Sims 4</h2>
+  <p>Todos os arquivos vão dentro da pasta de Mods do jogo, no perfil do Windows do jogador:</p>
+  <pre><code>%USERPROFILE%\Documents\Electronic Arts\The Sims 4\Mods\</code></pre>
+  <p>Ou, expandido, algo como:</p>
+  <pre><code>C:\Users\&lt;seu-usuario&gt;\Documents\Electronic Arts\The Sims 4\Mods\</code></pre>
+
+  <h2>Onde colocar cada arquivo</h2>
+  <div class="warn">
+    <strong>Regra de profundidade — a diferença entre <code>.ts4script</code> e <code>.package</code>:</strong>
+    o jogo só carrega um <code>.ts4script</code> se ele estiver no máximo <strong>1 nível</strong> abaixo de
+    <code>Mods/</code>. Já um <code>.package</code> é tolerante e funciona até uns 5-6 níveis de subpastas.
+    Essa assimetria existe porque o jogo varre a árvore de pastas por CC de forma mais profunda que por script
+    mods (que carregam módulos Python via <code>sys.path</code>).
+  </div>
+  <pre><code>Mods/
+└── PhotoFaceMod/
+    ├── photofacemod.ts4script   ✅ funciona (1 nível abaixo de Mods/)
+    └── photofacemod.package     ✅ também funciona aqui
+
+# ISSO NÃO FUNCIONA para o .ts4script:
+Mods/
+└── PhotoFaceMod/
+    └── dist/
+        └── photofacemod.ts4script   ❌ 2 níveis — o jogo não carrega</code></pre>
+  <p>
+    Recomendação prática: crie uma pasta <code>Mods/PhotoFaceMod/</code> e jogue os dois arquivos
+    (<code>.ts4script</code> e os <code>.package</code> — o do mod em si e o gerado pela sua foto) direto
+    dentro dela, sem subpastas adicionais.
+  </p>
+
+  <h2>Habilitar script mods nas configurações do jogo</h2>
+  <p>Por padrão o jogo não executa scripts customizados. Antes de qualquer coisa:</p>
+  <ol>
+    <li>Abra o The Sims 4.</li>
+    <li>No menu principal, vá em <strong>Opções → Outros</strong>.</li>
+    <li>Marque <strong>"Ativar mods de customização"</strong> (Enable Custom Content and Mods) — isso cobre CC.</li>
+    <li>Marque também <strong>"Ativar mods de script"</strong> (Script Mods Allowed) — sem isso, o
+      <code>.ts4script</code> é ignorado mesmo estando na pasta certa.</li>
+    <li>Reinicie o jogo para as opções terem efeito.</li>
+  </ol>
+
+  <h2>Gerando o .package da sua foto</h2>
+  <p>
+    A companion tool (Node.js) converte um PNG numa CAS part pronta pra usar, a partir do
+    <a href="base-de-conhecimento.html#casp-template">template CASP</a> já incluído no repositório/release.
+    Ela roda no computador do jogador (Windows), não dentro do jogo:
+  </p>
+  <pre><code># requer Node.js 18+ instalado no Windows
+node companion/dist/cli.js pack ^
+  --template packages/casp_template ^
+  --photo "C:\caminho\para\minha-foto.png" ^
+  --out "Mods\PhotoFaceMod\minha-foto.package"</code></pre>
+  <p>
+    Recomendações para a foto de entrada: uma imagem quadrada ou 4:3, com o rosto centralizado e bem
+    enquadrado — lembre que ela vai aparecer <strong>chapada e sem correção de perspectiva</strong>
+    (ver <a href="index.html">por que isso é proposital</a>), então fotos já "de frente" tendem a ficar
+    mais legíveis, mesmo com o efeito tosco.
+  </p>
+  <p>
+    Depois de gerado, o <code>.package</code> vai para dentro de <code>Mods/PhotoFaceMod/</code> junto com o
+    <code>.ts4script</code>, seguindo a regra de pastas acima.
+  </p>
+
+  <h2>Atribuindo a foto a um Sim, dentro do jogo</h2>
+  <ol>
+    <li>Entre em uma partida com o Sim desejado carregado no lote atual.</li>
+    <li>Abra o console de comandos: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd>.</li>
+    <li>Digite o comando de atribuição do mod (exposto via <code>@sims4.commands.Command</code>, ver
+      <a href="base-de-conhecimento.html#script-mod">Base de Conhecimento</a>) — consulte o
+      <code>README</code> do <code>src/photo_face_mod/</code> para a sintaxe exata mais atual do comando.</li>
+    <li>Feche o console; o acessório deve aparecer imediatamente na cabeça do Sim.</li>
+    <li>Salve o jogo — a atribuição é persistida (ver <a href="base-de-conhecimento.html#persistencia">como a
+      persistência funciona</a>) e deve reaparecer ao recarregar o save.</li>
+  </ol>
+
+  <h2 id="troubleshooting">Troubleshooting</h2>
+
+  <details>
+    <summary>O mod não aparece / não faz nada</summary>
+    <ul>
+      <li>Confira se <strong>"Ativar mods de customização"</strong> e <strong>"Ativar mods de script"</strong>
+        estão ambos marcados nas opções — são duas caixas separadas, e é fácil marcar só a primeira.</li>
+      <li>Confira a profundidade de pastas: o <code>.ts4script</code> precisa estar no máximo 1 nível abaixo
+        de <code>Mods/</code> (ver seção acima). Muito comum acontecer quando se extrai um <code>.zip</code>
+        de release e ele cria uma subpasta extra sem perceber.</li>
+      <li>Confira se o jogo foi <strong>reiniciado</strong> depois de mudar as opções e depois de copiar os
+        arquivos novos — mods são varridos na inicialização, não em tempo real.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>Tela de "Last Exception" ao entrar em uma partida</summary>
+    <ul>
+      <li>Esse erro normalmente indica um <code>.ts4script</code> com bytecode incompatível — o caso mais
+        comum é ele ter sido compilado com uma versão de Python diferente da 3.7 que o jogo embute (ver
+        <a href="compilacao.html#cpython37">nota de build</a>). Se você compilou o mod você mesmo, confira
+        que usou um interpretador 3.7.x.</li>
+      <li>Pode também ser conflito com outro mod desatualizado — tente mover todos os outros mods pra fora da
+        pasta <code>Mods/</code> temporariamente e testar só com o Photo Face Mod.</li>
+      <li>Um arquivo de log detalhado costuma ser gravado em
+        <code>Documents\Electronic Arts\The Sims 4\lastException.txt</code> — útil para reportar um bug.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>O acessório aparece, mas do tamanho/posição errada</summary>
+    <ul>
+      <li>Isso indica um problema no <code>.package</code> gerado (dimensões da foto muito diferentes do
+        esperado pelo template) — tente uma foto mais próxima de 4:3 ou quadrada.</li>
+      <li>Se persistir, é provavelmente um problema no template CASP em si
+        (<code>packages/casp_template/</code>), não na foto — reporte como issue no repositório.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>A foto some depois de salvar e carregar o jogo de novo</summary>
+    <ul>
+      <li>Confira se a pasta <code>Mods/mod_data/photo_face_mod/</code> não foi apagada/movida — é onde a
+        atribuição por Sim é persistida, separada do arquivo de save em si (ver
+        <a href="base-de-conhecimento.html#persistencia">detalhes de persistência</a>).</li>
+      <li>Copiar/mover um save para outro computador sem levar essa pasta junto perde as atribuições — é uma
+        limitação conhecida da abordagem de arquivo externo.</li>
+    </ul>
+  </details>
+
+  <p>Se nada disso resolver, veja o que já é coberto por testes automatizados em
+  <a href="testes.html">Testes</a> antes de assumir que é um bug novo — vale rodar a suíte de integridade dos
+  artefatos localmente se você mesmo buildou o mod.</p>
+</main>
+
+<footer class="site">
+  <div class="footer-inner">
+    <p>Photo Face Mod — mod não-oficial para The Sims 4. Não afiliado à Electronic Arts/Maxis.</p>
+    <p>Repositório: <a href="https://github.com/rpagliuca/sims4-photo-face-mod">github.com/rpagliuca/sims4-photo-face-mod</a></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  function current(){
+    var attr = root.getAttribute('data-theme');
+    if (attr) return attr;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateLabel(){
+    var btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    btn.textContent = current() === 'dark' ? '☀️ Tema claro' : '🌙 Tema escuro';
+  }
+  var saved = localStorage.getItem('pfm-theme');
+  if (saved) root.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', function(){
+    updateLabel();
+    var btn = document.getElementById('theme-toggle');
+    if (btn) {
+      btn.addEventListener('click', function(){
+        var next = current() === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('pfm-theme', next);
+        updateLabel();
+      });
+    }
+  });
+})();
+</script>
+</body>
+</html>

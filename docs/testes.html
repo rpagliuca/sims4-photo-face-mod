@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Testes — Photo Face Mod</title>
+<meta name="description" content="Como rodar os testes automatizados do Photo Face Mod e o que não é testável fora do jogo.">
+<style>
+  :root{
+    --bg:#faf8f3;
+    --bg-elevated:#ffffff;
+    --bg-alt:#f1ece0;
+    --text:#2b2620;
+    --text-dim:#6c6152;
+    --accent:#b0492c;
+    --accent-strong:#8a3820;
+    --accent-2:#3d6e58;
+    --border:#e0d6c2;
+    --code-bg:#2b2620;
+    --code-text:#f1ece0;
+    --warn-bg:#fdf1dd;
+    --warn-border:#d79a3d;
+    --warn-text:#5c3f10;
+    --shadow:0 1px 3px rgba(40,30,10,0.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#181510;
+      --bg-elevated:#211d17;
+      --bg-alt:#262019;
+      --text:#ece5d6;
+      --text-dim:#a89a80;
+      --accent:#e2814f;
+      --accent-strong:#f3a06a;
+      --accent-2:#6cbfa0;
+      --border:#3a3226;
+      --code-bg:#100e0a;
+      --code-text:#e8e0cf;
+      --warn-bg:#332a17;
+      --warn-border:#8a6a30;
+      --warn-text:#e2c07a;
+      --shadow:0 1px 3px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#faf8f3; --bg-elevated:#ffffff; --bg-alt:#f1ece0; --text:#2b2620; --text-dim:#6c6152;
+    --accent:#b0492c; --accent-strong:#8a3820; --accent-2:#3d6e58; --border:#e0d6c2;
+    --code-bg:#2b2620; --code-text:#f1ece0; --warn-bg:#fdf1dd; --warn-border:#d79a3d; --warn-text:#5c3f10;
+    --shadow:0 1px 3px rgba(40,30,10,0.10);
+  }
+  :root[data-theme="dark"]{
+    --bg:#181510; --bg-elevated:#211d17; --bg-alt:#262019; --text:#ece5d6; --text-dim:#a89a80;
+    --accent:#e2814f; --accent-strong:#f3a06a; --accent-2:#6cbfa0; --border:#3a3226;
+    --code-bg:#100e0a; --code-text:#e8e0cf; --warn-bg:#332a17; --warn-border:#8a6a30; --warn-text:#e2c07a;
+    --shadow:0 1px 3px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  header.site{position:sticky;top:0;z-index:10;background:var(--bg-elevated);border-bottom:1px solid var(--border);}
+  .header-inner{max-width:980px;margin:0 auto;padding:0.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+  .brand{font-weight:700;color:var(--text);text-decoration:none;font-size:1.05rem;display:flex;align-items:center;gap:0.5rem;}
+  .tag{display:inline-block;background:var(--bg-alt);border:1px solid var(--border);border-radius:999px;padding:0.1rem 0.6rem;font-size:0.75em;color:var(--text-dim);font-weight:500;}
+  nav.sitenav{display:flex;gap:1.1rem;flex-wrap:wrap;}
+  nav.sitenav a{color:var(--text-dim);text-decoration:none;padding-bottom:3px;border-bottom:2px solid transparent;font-size:0.95rem;}
+  nav.sitenav a:hover{color:var(--text);}
+  nav.sitenav a[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+  .theme-toggle{background:var(--bg-alt);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.85rem;cursor:pointer;}
+  .theme-toggle:hover{border-color:var(--accent);}
+  main{max-width:840px;margin:0 auto;padding:2.5rem 1.25rem 5rem;}
+  h1{font-size:2.1rem;margin:0 0 0.4rem;}
+  h2{font-size:1.5rem;margin-top:2.6rem;border-bottom:1px solid var(--border);padding-bottom:0.4rem;}
+  h3{font-size:1.15rem;margin-top:1.8rem;}
+  h4{font-size:1rem;margin-top:1.4rem;}
+  p{margin:0.9rem 0;}
+  .lede{font-size:1.15rem;color:var(--text-dim);margin-top:0.2rem;}
+  a{color:var(--accent);}
+  a:hover{color:var(--accent-strong);}
+  code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;font-size:0.88em;}
+  :not(pre)>code{background:var(--bg-alt);padding:0.15em 0.4em;border-radius:4px;}
+  pre{background:var(--code-bg);color:var(--code-text);padding:1rem 1.1rem;border-radius:8px;overflow-x:auto;font-size:0.85rem;line-height:1.5;}
+  pre code{background:none;padding:0;color:inherit;}
+  table{width:100%;border-collapse:collapse;margin:1.4rem 0;font-size:0.92rem;}
+  th,td{border:1px solid var(--border);padding:0.55rem 0.75rem;text-align:left;vertical-align:top;}
+  th{background:var(--bg-alt);}
+  .note,.warn{border-left:4px solid var(--accent-2);background:var(--bg-alt);padding:0.85rem 1.1rem;border-radius:0 8px 8px 0;margin:1.4rem 0;}
+  .warn{border-color:var(--warn-border);background:var(--warn-bg);color:var(--warn-text);}
+  .warn strong{color:inherit;}
+  ul,ol{padding-left:1.4rem;}
+  li{margin:0.35rem 0;}
+  .card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem;margin:1.6rem 0;}
+  .card{border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.2rem;background:var(--bg-elevated);box-shadow:var(--shadow);}
+  .card h3{margin-top:0;font-size:1.05rem;}
+  .card p{margin:0.5rem 0 0;color:var(--text-dim);font-size:0.93rem;}
+  footer.site{border-top:1px solid var(--border);margin-top:3rem;padding:2rem 1.25rem;color:var(--text-dim);font-size:0.88rem;}
+  footer.site .footer-inner{max-width:840px;margin:0 auto;}
+  .badge-ok{color:var(--accent-2);font-weight:700;}
+  .badge-no{color:var(--warn-border);font-weight:700;}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="header-inner">
+    <a class="brand" href="index.html">📸 Photo Face Mod <span class="tag">The Sims 4</span></a>
+    <nav class="sitenav">
+      <a href="index.html">Início</a>
+      <a href="base-de-conhecimento.html">Base de Conhecimento</a>
+      <a href="compilacao.html">Compilação</a>
+      <a href="instalacao.html">Instalação</a>
+      <a href="testes.html" aria-current="page">Testes</a>
+    </nav>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Alternar tema claro/escuro">🌙 Tema escuro</button>
+  </div>
+</header>
+
+<main>
+  <h1>Testes</h1>
+  <p class="lede">O que é testado automaticamente, como rodar cada suíte, e — igualmente importante — o que <strong>não</strong> dá pra testar fora do jogo.</p>
+
+  <div class="note">
+    <strong>Princípio geral do projeto:</strong> tudo que é lógica pura (parsing, regras de atribuição de foto,
+    geração de bytes do DBPF, validação de argumentos de CLI) é mockado/isolado da API não-documentada do jogo
+    e testado automaticamente. O que só existe dentro do engine 3D do The Sims 4 (a foto realmente aparecendo
+    grudada na cabeça, o giro do acessório) é validado manualmente pelo mantenedor no Windows.
+  </div>
+
+  <h2>Suítes de teste</h2>
+
+  <h3>1. Script mod — <code>pytest</code></h3>
+  <p>
+    Local: <code>tests/python/</code>, cobrindo os módulos de <code>src/photo_face_mod/</code>.
+  </p>
+  <pre><code># com um Python de desenvolvimento (3.11+ é aceitável aqui — não precisa ser 3.7,
+# já que os testes não rodam dentro do jogo, só exercitam a lógica isolada)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r tests/python/requirements.txt   # pytest + mocks da API do jogo
+pytest tests/python/ -v</code></pre>
+  <p>O que essa suíte cobre:</p>
+  <ul>
+    <li>Lógica de leitura/escrita do <code>assignments.json</code> (serialização, chaves por <code>sim_id</code>
+      + GUID de save slot, tratamento de arquivo ausente/corrompido).</li>
+    <li>Comportamento dos handlers de evento (<code>ZoneEarlyLoadEvent</code>, <code>ZoneLateLoadEvent</code>,
+      <code>SaveEvent</code>) com a API do jogo <strong>mockada</strong> — os módulos <code>sims4</code>,
+      <code>services</code> etc. não existem fora do jogo, então os testes usam stubs/fakes que imitam a
+      interface relevante, não o comportamento real do engine.</li>
+    <li>Parsing e validação de argumentos do comando de console (<code>@sims4.commands.Command</code>).</li>
+    <li>Qualquer lógica de mapeamento "Sim → qual swatch/CASP aplicar" que seja pura o suficiente para isolar
+      da chamada real de aplicação do acessório no jogo.</li>
+  </ul>
+
+  <h3>2. Companion tool — <code>node:test</code></h3>
+  <p>
+    Local: <code>tests/node/</code>, cobrindo <code>companion/</code>.
+  </p>
+  <pre><code>cd companion/
+npm install
+npm test   # roda node:test (ou o runner configurado no package.json)</code></pre>
+  <p>O que essa suíte cobre:</p>
+  <ul>
+    <li>Validação de argumentos da CLI (foto inexistente, formato de imagem não suportado, template CASP
+      ausente).</li>
+    <li>Conversão PNG → textura CAS via <code>@s4tk/images</code>: dado um PNG de teste, o resultado é uma
+      textura no formato esperado (dimensões, formato de pixel) — sem precisar do jogo para validar isso,
+      já que é um teste sobre o formato de arquivo, não sobre renderização.</li>
+    <li>Escrita do <code>.package</code> via <code>@s4tk/models</code>: a entrada de textura do template é
+      substituída corretamente, as demais entradas (CASP, geometria, thumbnail) permanecem intactas
+      byte-a-byte.</li>
+  </ul>
+
+  <h3>3. Integridade de artefatos</h3>
+  <p>
+    Testes (podem viver em <code>tests/python/</code> ou <code>tests/node/</code>, dependendo de qual
+    linguagem faz mais sentido para cada verificação) que abrem os artefatos <em>finais</em> do build e
+    checam que eles são estruturalmente válidos, sem depender do jogo:
+  </p>
+  <ul>
+    <li><strong><code>.ts4script</code> é um ZIP válido</strong> — abre com qualquer biblioteca de ZIP padrão,
+      contém pelo menos um <code>.pyc</code>, e o magic number do bytecode corresponde ao CPython 3.7 (ver
+      <a href="base-de-conhecimento.html#cpython">Base de Conhecimento</a> e
+      <a href="compilacao.html#cpython37">Compilação</a>).</li>
+    <li><strong><code>.package</code> é um DBPF parseável</strong> — header de 96 bytes presente, índice de
+      recursos consistente, e as entradas esperadas (CASP, GEOM, textura) existem com os
+      <a href="base-de-conhecimento.html#dbpf">Type IDs corretos</a>.</li>
+  </ul>
+  <p>
+    Esse nível de teste é o que dá mais confiança de que "o build não está silenciosamente quebrado" antes de
+    qualquer teste manual no jogo — pega a maioria dos erros de packaging sem precisar abrir o Windows.
+  </p>
+
+  <h2>CI</h2>
+  <p>
+    O GitHub Actions (<code>.github/workflows/</code>) roda, numa matriz Linux, as três suítes acima a cada
+    push/PR, além de produzir os artefatos de build como <em>workflow artifacts</em>/release assets. Consulte
+    os arquivos em <code>.github/workflows/</code> para a configuração exata e os gatilhos (push, PR, tags de
+    release).
+  </p>
+
+  <h2>O que NÃO é testável automaticamente</h2>
+  <div class="warn">
+    <strong>Estas verificações exigem o jogo rodando no Windows e são sempre manuais:</strong>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <h3><span class="badge-no">✗</span> Aparência visual do acessório</h3>
+      <p>Se a foto realmente aparece grudada na cabeça, na posição/escala certa, e se o "efeito tosco" (gira com a cabeça, sem perspectiva) está visualmente como esperado.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge-no">✗</span> Comando de console dentro do jogo</h3>
+      <p>Que o <code>@sims4.commands.Command</code> realmente aparece e responde no console do jogo (<kbd>Ctrl+Shift+C</kbd>), com a UI real do The Sims 4.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge-no">✗</span> Persistência através de save/load real</h3>
+      <p>Que a atribuição sobrevive a salvar, fechar o jogo, reabrir e carregar o save — os testes automatizados cobrem a lógica de leitura/escrita do JSON isoladamente, mas não o ciclo de vida real de save do engine.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge-no">✗</span> Compatibilidade com outros mods</h3>
+      <p>Conflitos com S4CL de outro mod, ou com mods populares (Wicked Whims, MC Command Center) só aparecem rodando o jogo de verdade com múltiplos mods instalados.</p>
+    </div>
+  </div>
+  <p>
+    Esses pontos ficam registrados como um <strong>checklist manual</strong> que o mantenedor roda no Windows
+    antes de cada release — ver <a href="instalacao.html">Instalação</a> para o passo a passo de atribuir uma
+    foto a um Sim em jogo, que dobra como roteiro de validação manual.
+  </p>
+</main>
+
+<footer class="site">
+  <div class="footer-inner">
+    <p>Photo Face Mod — mod não-oficial para The Sims 4. Não afiliado à Electronic Arts/Maxis.</p>
+    <p>Repositório: <a href="https://github.com/rpagliuca/sims4-photo-face-mod">github.com/rpagliuca/sims4-photo-face-mod</a></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  function current(){
+    var attr = root.getAttribute('data-theme');
+    if (attr) return attr;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateLabel(){
+    var btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    btn.textContent = current() === 'dark' ? '☀️ Tema claro' : '🌙 Tema escuro';
+  }
+  var saved = localStorage.getItem('pfm-theme');
+  if (saved) root.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', function(){
+    updateLabel();
+    var btn = document.getElementById('theme-toggle');
+    if (btn) {
+      btn.addEventListener('click', function(){
+        var next = current() === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('pfm-theme', next);
+        updateLabel();
+      });
+    }
+  });
+})();
+</script>
+</body>
+</html>

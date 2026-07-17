@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Face Mod — The Sims 4</title>
+<meta name="description" content="Documentação do Photo Face Mod: cola a foto do jogador na cara do Sim, de propósito tosco, sem perspectiva.">
+<style>
+  :root{
+    --bg:#faf8f3;
+    --bg-elevated:#ffffff;
+    --bg-alt:#f1ece0;
+    --text:#2b2620;
+    --text-dim:#6c6152;
+    --accent:#b0492c;
+    --accent-strong:#8a3820;
+    --accent-2:#3d6e58;
+    --border:#e0d6c2;
+    --code-bg:#2b2620;
+    --code-text:#f1ece0;
+    --warn-bg:#fdf1dd;
+    --warn-border:#d79a3d;
+    --warn-text:#5c3f10;
+    --shadow:0 1px 3px rgba(40,30,10,0.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#181510;
+      --bg-elevated:#211d17;
+      --bg-alt:#262019;
+      --text:#ece5d6;
+      --text-dim:#a89a80;
+      --accent:#e2814f;
+      --accent-strong:#f3a06a;
+      --accent-2:#6cbfa0;
+      --border:#3a3226;
+      --code-bg:#100e0a;
+      --code-text:#e8e0cf;
+      --warn-bg:#332a17;
+      --warn-border:#8a6a30;
+      --warn-text:#e2c07a;
+      --shadow:0 1px 3px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#faf8f3; --bg-elevated:#ffffff; --bg-alt:#f1ece0; --text:#2b2620; --text-dim:#6c6152;
+    --accent:#b0492c; --accent-strong:#8a3820; --accent-2:#3d6e58; --border:#e0d6c2;
+    --code-bg:#2b2620; --code-text:#f1ece0; --warn-bg:#fdf1dd; --warn-border:#d79a3d; --warn-text:#5c3f10;
+    --shadow:0 1px 3px rgba(40,30,10,0.10);
+  }
+  :root[data-theme="dark"]{
+    --bg:#181510; --bg-elevated:#211d17; --bg-alt:#262019; --text:#ece5d6; --text-dim:#a89a80;
+    --accent:#e2814f; --accent-strong:#f3a06a; --accent-2:#6cbfa0; --border:#3a3226;
+    --code-bg:#100e0a; --code-text:#e8e0cf; --warn-bg:#332a17; --warn-border:#8a6a30; --warn-text:#e2c07a;
+    --shadow:0 1px 3px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  header.site{position:sticky;top:0;z-index:10;background:var(--bg-elevated);border-bottom:1px solid var(--border);}
+  .header-inner{max-width:980px;margin:0 auto;padding:0.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+  .brand{font-weight:700;color:var(--text);text-decoration:none;font-size:1.05rem;display:flex;align-items:center;gap:0.5rem;}
+  .tag{display:inline-block;background:var(--bg-alt);border:1px solid var(--border);border-radius:999px;padding:0.1rem 0.6rem;font-size:0.75em;color:var(--text-dim);font-weight:500;}
+  nav.sitenav{display:flex;gap:1.1rem;flex-wrap:wrap;}
+  nav.sitenav a{color:var(--text-dim);text-decoration:none;padding-bottom:3px;border-bottom:2px solid transparent;font-size:0.95rem;}
+  nav.sitenav a:hover{color:var(--text);}
+  nav.sitenav a[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+  .theme-toggle{background:var(--bg-alt);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.85rem;cursor:pointer;}
+  .theme-toggle:hover{border-color:var(--accent);}
+  main{max-width:840px;margin:0 auto;padding:2.5rem 1.25rem 5rem;}
+  h1{font-size:2.1rem;margin:0 0 0.4rem;}
+  h2{font-size:1.5rem;margin-top:2.6rem;border-bottom:1px solid var(--border);padding-bottom:0.4rem;}
+  h3{font-size:1.15rem;margin-top:1.8rem;}
+  p{margin:0.9rem 0;}
+  .lede{font-size:1.15rem;color:var(--text-dim);margin-top:0.2rem;}
+  a{color:var(--accent);}
+  a:hover{color:var(--accent-strong);}
+  code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;font-size:0.88em;}
+  :not(pre)>code{background:var(--bg-alt);padding:0.15em 0.4em;border-radius:4px;}
+  pre{background:var(--code-bg);color:var(--code-text);padding:1rem 1.1rem;border-radius:8px;overflow-x:auto;font-size:0.85rem;line-height:1.5;}
+  pre code{background:none;padding:0;color:inherit;}
+  table{width:100%;border-collapse:collapse;margin:1.4rem 0;font-size:0.92rem;}
+  th,td{border:1px solid var(--border);padding:0.55rem 0.75rem;text-align:left;vertical-align:top;}
+  th{background:var(--bg-alt);}
+  .note,.warn{border-left:4px solid var(--accent-2);background:var(--bg-alt);padding:0.85rem 1.1rem;border-radius:0 8px 8px 0;margin:1.4rem 0;}
+  .warn{border-color:var(--warn-border);background:var(--warn-bg);color:var(--warn-text);}
+  .warn strong{color:inherit;}
+  .card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem;margin:1.6rem 0;}
+  .card{border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.2rem;background:var(--bg-elevated);box-shadow:var(--shadow);}
+  .card h3{margin-top:0;font-size:1.05rem;}
+  .card p{margin:0.5rem 0 0.7rem;color:var(--text-dim);font-size:0.93rem;}
+  .card a{font-size:0.9rem;font-weight:600;text-decoration:none;}
+  .diagram-wrap{background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;padding:1.2rem;margin:1.6rem 0;box-shadow:var(--shadow);overflow-x:auto;}
+  svg text{fill:var(--text);font-family:inherit;}
+  svg text.dim{fill:var(--text-dim);}
+  .dbox{fill:var(--bg-alt);stroke:var(--border);stroke-width:1.6;}
+  .dbox.accent{stroke:var(--accent-2);}
+  .dedge{stroke:var(--accent-2);stroke-width:2;fill:none;marker-end:url(#arrow);}
+  .dedge.dashed{stroke-dasharray:5,4;}
+  footer.site{border-top:1px solid var(--border);margin-top:3rem;padding:2rem 1.25rem;color:var(--text-dim);font-size:0.88rem;}
+  footer.site .footer-inner{max-width:840px;margin:0 auto;}
+  ul,ol{padding-left:1.4rem;}
+  li{margin:0.35rem 0;}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="header-inner">
+    <a class="brand" href="index.html">📸 Photo Face Mod <span class="tag">The Sims 4</span></a>
+    <nav class="sitenav">
+      <a href="index.html" aria-current="page">Início</a>
+      <a href="base-de-conhecimento.html">Base de Conhecimento</a>
+      <a href="compilacao.html">Compilação</a>
+      <a href="instalacao.html">Instalação</a>
+      <a href="testes.html">Testes</a>
+    </nav>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Alternar tema claro/escuro">🌙 Tema escuro</button>
+  </div>
+</header>
+
+<main>
+  <h1>Photo Face Mod</h1>
+  <p class="lede">Cola a foto de perfil do jogador bem em cima do rosto de um Sim específico. Em 2D puro, virada pra câmera, sem nenhuma tentativa de perspectiva 3D. O tosco é a feature.</p>
+
+  <h2>O que é isso</h2>
+  <p>
+    O <strong>Photo Face Mod</strong> deixa o jogador atribuir uma foto (um PNG qualquer) a um Sim do jogo.
+    A partir daí, sempre que aquele Sim aparece em jogo, a foto fica grudada na cabeça dele — girando junto
+    com a cabeça como qualquer chapéu ou óculos, sem seguir a câmera, sem se deformar pra "encaixar" no rosto.
+    É uma plaquinha 2D presa no osso da cabeça (<code>b__Head__</code>), e ponto final.
+  </p>
+  <p>
+    Não existe tentativa de projetar a textura sobre a geometria 3D do rosto, não existe blend de material,
+    não existe shader especial. É deliberadamente o approach mais simples e mais "errado" tecnicamente —
+    e é exatamente por isso que funciona como piada visual: o Sim anda por aí com uma foto 4x3 chapada na cara,
+    que balança e gira do jeito mais artificial possível.
+  </p>
+
+  <h2>Por que é tosco de propósito</h2>
+  <p>
+    Existe um jeito "certo" de fazer overlay de rosto em jogos 3D: billboarding (geometria que sempre rotaciona
+    pra encarar a câmera) combinado com projeção de textura sensível à pose da cabeça. O engine do The Sims 4
+    <strong>não oferece isso</strong> para nada anexado ao rig de um Sim — billboard só existe para LOD de
+    vegetação distante (ver <a href="base-de-conhecimento.html#billboard">Base de Conhecimento</a>). Implementar
+    isso de verdade exigiria mexer no shader/engine do jogo, o que está fora de alcance de um script mod ou de CC.
+  </p>
+  <p>
+    Em vez de perseguir uma solução "correta" inviável, a decisão de design foi abraçar a limitação:
+    um acessório CC comum, preso rigidamente à cabeça, sem qualquer correção de perspectiva. O resultado visual
+    é uma plaquinha 2D chapada que gira de forma nitidamente errada conforme o Sim move a cabeça — o que é
+    exatamente o efeito cômico pretendido.
+  </p>
+
+  <h2>Como funciona (arquitetura)</h2>
+  <p>Duas trilhas de trabalho que convergem no jogo:</p>
+  <ol>
+    <li><strong>Offline / antes de jogar:</strong> a <em>companion tool</em> (Node.js) converte a foto do jogador
+      num acessório CAS (<code>.package</code>, formato DBPF) com a textura já no formato que o jogo espera.</li>
+    <li><strong>Dentro do jogo:</strong> o <em>script mod</em> (Python, <code>.ts4script</code>) deixa o jogador
+      atribuir aquele acessório a um Sim específico, guarda essa atribuição num arquivo à parte, e reaplica o
+      acessório certo sempre que o save é carregado.</li>
+  </ol>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 920 460" role="img" aria-label="Diagrama de arquitetura do Photo Face Mod" style="width:100%;height:auto;">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent-2)"></path>
+        </marker>
+      </defs>
+
+      <!-- Row 1: pipeline offline -->
+      <rect class="dbox" x="20" y="20" width="250" height="76" rx="10"></rect>
+      <text x="145" y="52" text-anchor="middle" font-size="20">📷</text>
+      <text x="145" y="76" text-anchor="middle" font-size="13">Foto do jogador</text>
+      <text x="145" y="92" text-anchor="middle" font-size="12" class="dim">(PNG, qualquer tamanho)</text>
+
+      <line class="dedge" x1="270" y1="58" x2="326" y2="58"></line>
+
+      <rect class="dbox accent" x="330" y="20" width="270" height="76" rx="10"></rect>
+      <text x="465" y="46" text-anchor="middle" font-size="13" font-weight="700">🛠️ Companion Tool</text>
+      <text x="465" y="64" text-anchor="middle" font-size="12" class="dim">Node.js + Sims4Toolkit (S4TK)</text>
+      <text x="465" y="80" text-anchor="middle" font-size="12" class="dim">PNG → DST, monta o CASP</text>
+
+      <line class="dedge" x1="600" y1="58" x2="656" y2="58"></line>
+
+      <rect class="dbox" x="660" y="20" width="240" height="76" rx="10"></rect>
+      <text x="780" y="50" text-anchor="middle" font-size="13" font-weight="700">.package (DBPF)</text>
+      <text x="780" y="68" text-anchor="middle" font-size="12" class="dim">CASP + textura DST</text>
+      <text x="780" y="84" text-anchor="middle" font-size="12" class="dim">Custom Content</text>
+
+      <!-- Row 2: pipeline in-game -->
+      <rect class="dbox" x="20" y="170" width="250" height="76" rx="10"></rect>
+      <text x="145" y="200" text-anchor="middle" font-size="13" font-weight="700">🎮 Jogador atribui</text>
+      <text x="145" y="218" text-anchor="middle" font-size="12" class="dim">a foto a um Sim</text>
+      <text x="145" y="234" text-anchor="middle" font-size="12" class="dim">(comando / interação in-game)</text>
+
+      <line class="dedge" x1="270" y1="208" x2="326" y2="208"></line>
+
+      <rect class="dbox accent" x="330" y="170" width="270" height="76" rx="10"></rect>
+      <text x="465" y="196" text-anchor="middle" font-size="13" font-weight="700">🐍 Script Mod</text>
+      <text x="465" y="214" text-anchor="middle" font-size="12" class="dim">.ts4script — Python 3.7 in-game</text>
+      <text x="465" y="230" text-anchor="middle" font-size="12" class="dim">aplica o CASP certo ao Sim</text>
+
+      <line class="dedge" x1="600" y1="208" x2="656" y2="208"></line>
+
+      <rect class="dbox" x="660" y="170" width="240" height="76" rx="10"></rect>
+      <text x="780" y="196" text-anchor="middle" font-size="13" font-weight="700">💾 assignments.json</text>
+      <text x="780" y="214" text-anchor="middle" font-size="12" class="dim">Mods/mod_data/</text>
+      <text x="780" y="230" text-anchor="middle" font-size="12" class="dim">photo_face_mod/</text>
+
+      <line class="dedge dashed" x1="600" y1="230" x2="600" y2="244" transform="translate(0,0)"></line>
+      <text x="465" y="262" text-anchor="middle" font-size="11" class="dim">reage a eventos: ZoneEarlyLoad / ZoneLateLoad / Save</text>
+
+      <!-- Convergence -->
+      <line class="dedge" x1="780" y1="246" x2="700" y2="316"></line>
+      <line class="dedge" x1="465" y1="246" x2="475" y2="316"></line>
+
+      <rect class="dbox accent" x="170" y="320" width="580" height="110" rx="12"></rect>
+      <text x="460" y="352" text-anchor="middle" font-size="15" font-weight="700">🎲 The Sims 4 (Windows)</text>
+      <text x="460" y="374" text-anchor="middle" font-size="12" class="dim">Sim com o acessório 2D preso ao osso b__Head__</text>
+      <text x="460" y="392" text-anchor="middle" font-size="12" class="dim">gira com a cabeça, nunca encara a câmera de verdade</text>
+      <text x="460" y="410" text-anchor="middle" font-size="12" style="fill:var(--accent);font-weight:700;">= "a cara tosca"</text>
+    </svg>
+  </div>
+
+  <h2>Componentes</h2>
+  <div class="card-grid">
+    <div class="card">
+      <h3>Script mod (Python)</h3>
+      <p><code>src/photo_face_mod/</code> — comandos de console, eventos de save/load, aplicação do acessório certo por Sim.</p>
+      <a href="base-de-conhecimento.html#script-mod">Detalhes →</a>
+    </div>
+    <div class="card">
+      <h3>Companion tool (Node.js)</h3>
+      <p><code>companion/</code> — converte PNG em CASP + textura DST usando S4TK, monta o <code>.package</code>.</p>
+      <a href="base-de-conhecimento.html#companion-tool">Detalhes →</a>
+    </div>
+    <div class="card">
+      <h3>CASP template</h3>
+      <p><code>packages/casp_template/</code> — o acessório base criado uma vez no Sims4Studio, reaproveitado a cada foto.</p>
+      <a href="base-de-conhecimento.html#casp-template">Detalhes →</a>
+    </div>
+    <div class="card">
+      <h3>Persistência por Sim</h3>
+      <p>JSON externo em <code>Mods/mod_data/photo_face_mod/</code>, chaveado por Sim + save slot.</p>
+      <a href="base-de-conhecimento.html#persistencia">Detalhes →</a>
+    </div>
+  </div>
+
+  <h2>Comece por aqui</h2>
+  <div class="card-grid">
+    <div class="card">
+      <h3>📚 Base de Conhecimento</h3>
+      <p>Formatos de arquivo, IDs de tipo do DBPF, ossos do rig, padrões de código do S4CL — tudo documentado a fundo.</p>
+      <a href="base-de-conhecimento.html">Ler →</a>
+    </div>
+    <div class="card">
+      <h3>🛠️ Compilação</h3>
+      <p>Como buildar o mod no Linux: ambiente Python, Node.js, geração do <code>.ts4script</code> e do <code>.package</code>.</p>
+      <a href="compilacao.html">Ler →</a>
+    </div>
+    <div class="card">
+      <h3>📥 Instalação</h3>
+      <p>Onde colocar os arquivos na pasta <code>Mods</code> do Windows e como gerar o <code>.package</code> da sua foto.</p>
+      <a href="instalacao.html">Ler →</a>
+    </div>
+    <div class="card">
+      <h3>✅ Testes</h3>
+      <p>Suítes automatizadas (pytest, node:test) e o que só dá pra validar manualmente dentro do jogo.</p>
+      <a href="testes.html">Ler →</a>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Estado do projeto:</strong> este mod é desenvolvido inteiramente em Linux. O The Sims 4 só roda em
+    Windows, então a validação visual final — "a foto realmente aparece grudada na cabeça do Sim?" — é sempre
+    manual, feita pelo mantenedor no Windows. Os artefatos e os testes automatizados existem para maximizar a
+    confiança <em>antes</em> desse passo manual.
+  </div>
+</main>
+
+<footer class="site">
+  <div class="footer-inner">
+    <p>Photo Face Mod — mod não-oficial para The Sims 4. Não afiliado à Electronic Arts/Maxis.</p>
+    <p>Repositório: <a href="https://github.com/rpagliuca/sims4-photo-face-mod">github.com/rpagliuca/sims4-photo-face-mod</a></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  function current(){
+    var attr = root.getAttribute('data-theme');
+    if (attr) return attr;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateLabel(){
+    var btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    btn.textContent = current() === 'dark' ? '☀️ Tema claro' : '🌙 Tema escuro';
+  }
+  var saved = localStorage.getItem('pfm-theme');
+  if (saved) root.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', function(){
+    updateLabel();
+    var btn = document.getElementById('theme-toggle');
+    if (btn) {
+      btn.addEventListener('click', function(){
+        var next = current() === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('pfm-theme', next);
+        updateLabel();
+      });
+    }
+  });
+})();
+</script>
+</body>
+</html>

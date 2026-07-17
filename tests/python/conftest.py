@@ -1,0 +1,111 @@
+"""Installs lightweight fakes for The Sims 4's game-only modules
+(`sims4`, `services`, `server_commands.argument_helpers`, `zone_spin_up`)
+into sys.modules before any test imports photo_face_mod.ts4_integration or
+photo_face_mod.hooks. The real game API is not decompiled/available here;
+these fakes model the commonly documented shape of that API so the
+integration layer's own logic (command dispatch, store/manifest wiring,
+zone-load patching) can be exercised without the actual game.
+"""
+import sys
+import types
+
+import pytest
+
+
+def _build_fake_sims4():
+    sims4 = types.ModuleType("sims4")
+    commands = types.ModuleType("sims4.commands")
+    commands.output_calls = []
+
+    class CommandType:
+        Live = "Live"
+        Cheat = "Cheat"
+        DebugOnly = "DebugOnly"
+
+    def Command(name, command_type=None):
+        def decorator(func):
+            func._command_name = name
+            func._command_type = command_type
+            return func
+
+        return decorator
+
+    def output(msg, _connection=None):
+        commands.output_calls.append(msg)
+
+    commands.Command = Command
+    commands.CommandType = CommandType
+    commands.output = output
+    sims4.commands = commands
+    sys.modules["sims4"] = sims4
+    sys.modules["sims4.commands"] = commands
+
+
+def _build_fake_services():
+    services = types.ModuleType("services")
+
+    class _FakeSimInfoManager:
+        def __init__(self):
+            self.sims = []
+
+        def get_all(self):
+            return list(self.sims)
+
+    services._manager = _FakeSimInfoManager()
+    services.sim_info_manager = lambda: services._manager
+    sys.modules["services"] = services
+
+
+def _build_fake_argument_helpers():
+    server_commands = types.ModuleType("server_commands")
+    argument_helpers = types.ModuleType("server_commands.argument_helpers")
+
+    class OptionalTargetParam:
+        def __init__(self, value=None):
+            self.value = value
+
+    argument_helpers.get_optional_target_result = None
+    argument_helpers.OptionalTargetParam = OptionalTargetParam
+    argument_helpers.get_optional_target = (
+        lambda opt_sim, _connection=None: argument_helpers.get_optional_target_result
+    )
+    server_commands.argument_helpers = argument_helpers
+    sys.modules["server_commands"] = server_commands
+    sys.modules["server_commands.argument_helpers"] = argument_helpers
+
+
+def _build_fake_zone_spin_up():
+    zone_spin_up = types.ModuleType("zone_spin_up")
+
+    class ZoneSpinUp:
+        def load(self, *args, **kwargs):
+            return "original_load_result"
+
+    zone_spin_up.ZoneSpinUp = ZoneSpinUp
+    sys.modules["zone_spin_up"] = zone_spin_up
+
+
+_build_fake_sims4()
+_build_fake_services()
+_build_fake_argument_helpers()
+_build_fake_zone_spin_up()
+
+
+from fakes import FakeSim
+
+
+@pytest.fixture
+def fake_sim():
+    return FakeSim(sim_id=12345)
+
+
+@pytest.fixture(autouse=True)
+def _reset_fakes():
+    import services as fake_services_module
+    import sims4.commands as fake_commands_module
+    from server_commands import argument_helpers as fake_argument_helpers_module
+
+    fake_commands_module.output_calls.clear()
+    fake_argument_helpers_module.get_optional_target_result = None
+    fake_services_module._manager.sims = []
+    yield

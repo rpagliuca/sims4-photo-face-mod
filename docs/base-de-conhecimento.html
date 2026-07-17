@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base de Conhecimento — Photo Face Mod</title>
+<meta name="description" content="Referência técnica profunda sobre modding do The Sims 4: formato .ts4script, DBPF, tipos de recurso, rig, persistência e ferramental.">
+<style>
+  :root{
+    --bg:#faf8f3;
+    --bg-elevated:#ffffff;
+    --bg-alt:#f1ece0;
+    --text:#2b2620;
+    --text-dim:#6c6152;
+    --accent:#b0492c;
+    --accent-strong:#8a3820;
+    --accent-2:#3d6e58;
+    --border:#e0d6c2;
+    --code-bg:#2b2620;
+    --code-text:#f1ece0;
+    --warn-bg:#fdf1dd;
+    --warn-border:#d79a3d;
+    --warn-text:#5c3f10;
+    --shadow:0 1px 3px rgba(40,30,10,0.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#181510;
+      --bg-elevated:#211d17;
+      --bg-alt:#262019;
+      --text:#ece5d6;
+      --text-dim:#a89a80;
+      --accent:#e2814f;
+      --accent-strong:#f3a06a;
+      --accent-2:#6cbfa0;
+      --border:#3a3226;
+      --code-bg:#100e0a;
+      --code-text:#e8e0cf;
+      --warn-bg:#332a17;
+      --warn-border:#8a6a30;
+      --warn-text:#e2c07a;
+      --shadow:0 1px 3px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#faf8f3; --bg-elevated:#ffffff; --bg-alt:#f1ece0; --text:#2b2620; --text-dim:#6c6152;
+    --accent:#b0492c; --accent-strong:#8a3820; --accent-2:#3d6e58; --border:#e0d6c2;
+    --code-bg:#2b2620; --code-text:#f1ece0; --warn-bg:#fdf1dd; --warn-border:#d79a3d; --warn-text:#5c3f10;
+    --shadow:0 1px 3px rgba(40,30,10,0.10);
+  }
+  :root[data-theme="dark"]{
+    --bg:#181510; --bg-elevated:#211d17; --bg-alt:#262019; --text:#ece5d6; --text-dim:#a89a80;
+    --accent:#e2814f; --accent-strong:#f3a06a; --accent-2:#6cbfa0; --border:#3a3226;
+    --code-bg:#100e0a; --code-text:#e8e0cf; --warn-bg:#332a17; --warn-border:#8a6a30; --warn-text:#e2c07a;
+    --shadow:0 1px 3px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  header.site{position:sticky;top:0;z-index:10;background:var(--bg-elevated);border-bottom:1px solid var(--border);}
+  .header-inner{max-width:980px;margin:0 auto;padding:0.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+  .brand{font-weight:700;color:var(--text);text-decoration:none;font-size:1.05rem;display:flex;align-items:center;gap:0.5rem;}
+  .tag{display:inline-block;background:var(--bg-alt);border:1px solid var(--border);border-radius:999px;padding:0.1rem 0.6rem;font-size:0.75em;color:var(--text-dim);font-weight:500;}
+  nav.sitenav{display:flex;gap:1.1rem;flex-wrap:wrap;}
+  nav.sitenav a{color:var(--text-dim);text-decoration:none;padding-bottom:3px;border-bottom:2px solid transparent;font-size:0.95rem;}
+  nav.sitenav a:hover{color:var(--text);}
+  nav.sitenav a[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+  .theme-toggle{background:var(--bg-alt);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.85rem;cursor:pointer;}
+  .theme-toggle:hover{border-color:var(--accent);}
+  main{max-width:840px;margin:0 auto;padding:2.5rem 1.25rem 5rem;}
+  h1{font-size:2.1rem;margin:0 0 0.4rem;}
+  h2{font-size:1.5rem;margin-top:2.6rem;border-bottom:1px solid var(--border);padding-bottom:0.4rem;}
+  h3{font-size:1.15rem;margin-top:1.8rem;}
+  h4{font-size:1rem;margin-top:1.4rem;}
+  p{margin:0.9rem 0;}
+  .lede{font-size:1.15rem;color:var(--text-dim);margin-top:0.2rem;}
+  a{color:var(--accent);}
+  a:hover{color:var(--accent-strong);}
+  code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;font-size:0.88em;}
+  :not(pre)>code{background:var(--bg-alt);padding:0.15em 0.4em;border-radius:4px;}
+  pre{background:var(--code-bg);color:var(--code-text);padding:1rem 1.1rem;border-radius:8px;overflow-x:auto;font-size:0.85rem;line-height:1.5;}
+  pre code{background:none;padding:0;color:inherit;}
+  table{width:100%;border-collapse:collapse;margin:1.4rem 0;font-size:0.92rem;}
+  th,td{border:1px solid var(--border);padding:0.55rem 0.75rem;text-align:left;vertical-align:top;}
+  th{background:var(--bg-alt);}
+  .note,.warn{border-left:4px solid var(--accent-2);background:var(--bg-alt);padding:0.85rem 1.1rem;border-radius:0 8px 8px 0;margin:1.4rem 0;}
+  .warn{border-color:var(--warn-border);background:var(--warn-bg);color:var(--warn-text);}
+  .warn strong{color:inherit;}
+  ul,ol{padding-left:1.4rem;}
+  li{margin:0.35rem 0;}
+  .toc{background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;padding:1rem 1.4rem;margin:1.6rem 0;box-shadow:var(--shadow);}
+  .toc ul{margin:0.4rem 0;}
+  .toc a{text-decoration:none;}
+  footer.site{border-top:1px solid var(--border);margin-top:3rem;padding:2rem 1.25rem;color:var(--text-dim);font-size:0.88rem;}
+  footer.site .footer-inner{max-width:840px;margin:0 auto;}
+  .src{font-size:0.82rem;color:var(--text-dim);}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="header-inner">
+    <a class="brand" href="index.html">📸 Photo Face Mod <span class="tag">The Sims 4</span></a>
+    <nav class="sitenav">
+      <a href="index.html">Início</a>
+      <a href="base-de-conhecimento.html" aria-current="page">Base de Conhecimento</a>
+      <a href="compilacao.html">Compilação</a>
+      <a href="instalacao.html">Instalação</a>
+      <a href="testes.html">Testes</a>
+    </nav>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Alternar tema claro/escuro">🌙 Tema escuro</button>
+  </div>
+</header>
+
+<main>
+  <h1>Base de Conhecimento</h1>
+  <p class="lede">Tudo que foi levantado sobre modding do The Sims 4 durante a pesquisa deste projeto: formatos de arquivo, IDs de recurso, o rig, padrões de código e o ferramental disponível — com as decisões e os riscos conhecidos de cada escolha.</p>
+
+  <div class="toc">
+    <strong>Nesta página</strong>
+    <ul>
+      <li><a href="#cpython">O CPython embutido no jogo</a></li>
+      <li><a href="#ts4script">O formato .ts4script</a></li>
+      <li><a href="#script-mod">Padrões de script mod (S4CL)</a></li>
+      <li><a href="#dbpf">DBPF: o formato de .package</a></li>
+      <li><a href="#casp-template">CASP: acessórios e o template base</a></li>
+      <li><a href="#rig">O rig e o osso b__Head__</a></li>
+      <li><a href="#billboard">Por que não existe billboard de verdade</a></li>
+      <li><a href="#companion-tool">Companion tool e S4TK</a></li>
+      <li><a href="#persistencia">Persistência de dados por Sim</a></li>
+      <li><a href="#ferramental">Panorama do ferramental Linux vs. Windows</a></li>
+      <li><a href="#fontes">Fontes</a></li>
+    </ul>
+  </div>
+
+  <h2 id="cpython">O CPython embutido no jogo</h2>
+  <p>
+    O The Sims 4 embute um interpretador <strong>CPython 3.7.0</strong> desde a atualização de novembro de 2018
+    (a mesma atualização que trocou o sufixo dos módulos compilados de <code>.pyo</code> para <code>.pyc</code>,
+    seguindo a mudança do próprio CPython 3.7 que unificou os dois). Não há indício de que essa versão tenha
+    sido atualizada desde então — todo o ecossistema de mods da comunidade (S4CL, Wicked Whims, MC Command
+    Center, etc.) ainda assume 3.7.0 como alvo.
+  </p>
+  <p>
+    Isso importa diretamente para o build: o bytecode <code>.pyc</code> empacotado no <code>.ts4script</code>
+    precisa ter o <em>magic number</em> correspondente ao CPython 3.7. Compilar com um Python mais novo (3.10,
+    3.11...) produz bytecode incompatível que o jogo rejeita silenciosamente ou trava com "Last Exception".
+    Ver <a href="compilacao.html#cpython37">detalhes de build em Compilação</a>.
+  </p>
+
+  <h2 id="ts4script">O formato .ts4script</h2>
+  <p>
+    Um arquivo <code>.ts4script</code> é, estruturalmente, um <strong>ZIP renomeado</strong> contendo módulos
+    Python — tanto <code>.py</code> (código-fonte) quanto <code>.pyc</code> (bytecode pré-compilado) funcionam,
+    mas a prática da comunidade é distribuir só <code>.pyc</code> para reduzir tamanho e (marginalmente)
+    dificultar leitura casual do código. O jogo varre a pasta <code>Mods/</code>, identifica arquivos com essa
+    extensão e os injeta no <code>sys.path</code> do interpretador embutido, como se fossem pacotes Python
+    normais.
+  </p>
+  <div class="warn">
+    <strong>Regra de profundidade:</strong> o jogo só reconhece <code>.ts4script</code> até <strong>1 nível</strong>
+    de subpasta dentro de <code>Mods/</code> (ex.: <code>Mods/PhotoFaceMod/photofacemod.ts4script</code> funciona;
+    <code>Mods/PhotoFaceMod/dist/photofacemod.ts4script</code> não é carregado). Arquivos <code>.package</code>
+    são mais tolerantes e funcionam até uns 5-6 níveis de profundidade. Essa assimetria é uma causa comum de
+    "meu mod não aparece" — ver <a href="instalacao.html#troubleshooting">Troubleshooting em Instalação</a>.
+  </div>
+
+  <h2 id="script-mod">Padrões de script mod (S4CL)</h2>
+  <p>
+    A API da EA para scripting não é documentada oficialmente; o conhecimento vem de engenharia reversa e de
+    frameworks comunitários. O mais usado é o <strong>Sims4CommunityLibrary (S4CL)</strong> — o repositório
+    original desapareceu e a comunidade migrou para o fork
+    <a href="https://github.com/DeviantGameMods/Sims4CommunityLibrary">DeviantGameMods/Sims4CommunityLibrary</a>
+    (licenciado CC BY 4.0). Ele expõe três padrões que este mod usa:
+  </p>
+  <ul>
+    <li>
+      <strong><code>@sims4.commands.Command</code></strong> — decorator nativo do jogo (não é do S4CL) que
+      registra uma função Python como comando de console, invocável via <kbd>Ctrl+Shift+C</kbd> no jogo
+      (ex.: <code>photoface.assign nome_do_sim caminho_da_foto</code>). É o gancho mais simples e estável para
+      interação do jogador com o mod, sem precisar de UI customizada.
+    </li>
+    <li>
+      <strong><code>CommonInjectionUtils.inject_safely_into</code></strong> (S4CL) — permite "envolver" (wrap)
+      um método de uma classe do jogo sem herdar dela nem sobrescrever o arquivo original, chamando o
+      comportamento original e adicionando lógica antes/depois. É como o mod se anexa a comportamentos
+      existentes (ex.: aplicar o acessório sempre que um Sim é instanciado em uma zona) sem conflitar com
+      outros mods que fazem o mesmo.
+    </li>
+    <li>
+      <strong><code>CommonEventRegistry.handle_events</code></strong> (S4CL) — sistema de eventos do S4CL sobre
+      os hooks nativos do jogo. Eventos relevantes para este mod: <code>ZoneEarlyLoadEvent</code> e
+      <code>ZoneLateLoadEvent</code> (disparados ao carregar um lote/save) e <code>SaveEvent</code> (dispara
+      inclusive quando o jogador fecha o jogo <em>sem</em> salvar manualmente, o que o torna mais confiável
+      que tentar interceptar só o menu "Salvar").
+    </li>
+  </ul>
+
+  <h2 id="dbpf">DBPF: o formato de .package</h2>
+  <p>
+    <strong>DBPF</strong> (Database Packed File) é o formato de contêiner usado por todos os jogos da Maxis/EA
+    desde o SimCity 4 — SimCity 4, Os Sims 2/3/4 todos usam variações dele. Um <code>.package</code> é
+    basicamente um índice de recursos, cada um endereçado por uma chave composta:
+  </p>
+  <ul>
+    <li><strong>Type ID</strong> (32-bit) — que tipo de recurso é (textura, tuning, geometria...)</li>
+    <li><strong>Group ID</strong> (32-bit) — agrupamento lógico, frequentemente <code>0x00000000</code></li>
+    <li><strong>Instance ID</strong> (64-bit) — identificador único do recurso dentro do tipo/grupo</li>
+  </ul>
+  <p>
+    O header do arquivo tem <strong>96 bytes</strong> fixos com metadados (versão do formato, contagem de
+    entradas do índice, offset do índice). Os dados de cada recurso podem estar comprimidos com
+    <strong>RefPack/QFS</strong>, um algoritmo de compressão LZ77-like proprietário da Maxis anterior ao zlib
+    virar padrão de fato.
+  </p>
+  <h4>Type IDs relevantes para este mod</h4>
+  <table>
+    <thead><tr><th>Recurso</th><th>Type ID</th><th>Papel neste mod</th></tr></thead>
+    <tbody>
+      <tr><td>CASP (CAS Part)</td><td><code>0x034AEECB</code></td><td>Define o acessório em si — metadados, slot, referências às outras entradas</td></tr>
+      <tr><td>Thumbnail de CASP</td><td><code>0x3C1AF1F2</code></td><td>Miniatura mostrada no CAS (Create-a-Sim)</td></tr>
+      <tr><td>GEOM (geometria)</td><td><code>0x015A1849</code></td><td>Malha 3D do acessório (a "plaquinha" plana)</td></tr>
+      <tr><td>Textura DST</td><td><code>0x00B2D882</code></td><td>Formato usado pela maioria das CAS parts — DDS "embaralhado" (shuffled), é onde a foto convertida entra</td></tr>
+      <tr><td>RLE2 / DDS DXT5</td><td><code>0x3453CF95</code></td><td>Variante de textura comprimida usada em alguns contextos (não-shuffled)</td></tr>
+      <tr><td>Tuning combinado</td><td><code>0x62E94D38</code></td><td>XML de tuning (definições de comportamento/dados) compilado</td></tr>
+      <tr><td>SimData</td><td><code>0x545AC67A</code></td><td>Dados binários estruturados associados a tuning</td></tr>
+      <tr><td>IMAG (PNG cru)</td><td><em>não documentado oficialmente</em></td><td>Existe um tipo para imagem crua sem DXT — ver risco abaixo</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>Risco conhecido, não validado:</strong> em teoria, se algum slot de CAS aceitasse referenciar uma
+    entrada <code>IMAG</code> (PNG cru) em vez de uma textura DST/DDS, o pipeline de conversão de imagem seria
+    trivial — sem precisar codificar DXT/DST. Isso <strong>não foi confirmado na prática</strong>; a suposição
+    seguranca é que CASP exige textura no formato DST comprimido, e é isso que o pipeline atual assume. Se
+    alguém validar o caminho <code>IMAG</code> no futuro, vale revisitar e simplificar a companion tool.
+  </div>
+
+  <h2 id="casp-template">CASP: acessórios e o template base</h2>
+  <p>
+    Um acessório CAS (<em>CAS Part</em>) é a unidade que o jogo entende como "algo equipável" — chapéu, óculos,
+    colar, etc. Ele é composto por várias entradas DBPF interligadas: o registro CASP (metadados: nome, slot de
+    equipamento, faixa de idade/gênero, referências), a(s) textura(s), a geometria e o thumbnail.
+  </p>
+  <p>
+    Criar um CASP do zero via código é possível em teoria, mas envolve reproduzir uma quantidade grande de
+    metadados e convenções que o <strong>Sims4Studio</strong> (ferramenta GUI da comunidade) já resolve de
+    forma confiável. A decisão deste projeto foi: <strong>criar o CASP base uma única vez no Sims4Studio, já
+    com N swatches (variações)</strong> — um acessório de cabeça simples, plano, do tamanho de uma foto, com
+    (por exemplo) 8-16 swatches reservados — e versionar esse <code>.package</code> "template" no repositório
+    (<code>packages/casp_template/</code>). Cada swatch já nasce com sua <strong>própria resource key de
+    textura distinta</strong>, corretamente referenciada pelo CASP internamente (o Sims4Studio cuida disso na
+    hora de criar os swatches). A companion tool então abre esse template com o S4TK e
+    <strong>substitui apenas a textura do swatch correspondente ao índice atribuído a um Sim específico</strong>
+    (ver <a href="#persistencia">persistência por Sim</a>), sem tocar no CASP nem nos outros swatches.
+    Como cada swatch tem uma resource key própria, pacotes gerados para Sims diferentes (índices diferentes)
+    sobrescrevem chaves diferentes e <strong>coexistem sem conflito</strong> quando instalados juntos — ao
+    contrário de uma abordagem ingênua de "uma textura só", que faria o último pacote instalado sobrescrever
+    a foto de todo mundo. Isso evita reimplementar toda a complexidade de geração/parsing binário de CASP do
+    zero.
+  </p>
+  <div class="warn">
+    <strong>Sims4Studio é GUI-only, sem CLI, e roda em .NET (Windows nativo ou Wine + .NET 6 Desktop Runtime no
+    Linux).</strong> A criação do template é, por natureza, um passo manual/único feito pelo mantenedor — não faz
+    parte do pipeline de build repetido a cada foto. O CI tenta automatizar a geração via Wine de forma
+    best-effort (ver <a href="compilacao.html#casp-automacao">Compilação</a>), mas isso é experimental; se a
+    automação falhar ou ficar frágil, o caminho de fallback documentado é gerar/atualizar o template manualmente
+    no Windows ou numa VM e commitar o resultado.
+  </div>
+
+  <h2 id="rig">O rig e o osso b__Head__</h2>
+  <p>
+    Sims usam um esqueleto (rig) comum de humanoide, com convenção de nomenclatura de ossos prefixada
+    <code>b__</code> (bone). O osso da cabeça é <code>b__Head__</code>. Acessórios de cabeça (chapéus, óculos,
+    brincos, e — neste mod — a "foto") são <strong>skinned rigidamente</strong> a esse osso: a geometria do
+    acessório herda 100% da transformação (posição, rotação, escala) do osso, sem nenhum blend com ossos
+    vizinhos. É o mesmo mecanismo que qualquer chapéu do jogo usa — não há nada de especial no acessório deste
+    mod do ponto de vista do engine, só o conteúdo (a foto) e o propósito (cobrir o rosto) são diferentes do uso
+    "normal".
+  </p>
+
+  <h2 id="billboard">Por que não existe billboard de verdade</h2>
+  <p>
+    "Billboarding" é a técnica clássica de sempre rotacionar uma geometria plana para encarar a câmera,
+    independente da orientação do objeto/personagem ao qual está anexada — é como árvores e vegetação distante
+    são renderizadas em praticamente todo jogo 3D, incluindo o The Sims 4. A pesquisa para este projeto não
+    encontrou nenhum indício de que esse mecanismo esteja exposto para <strong>qualquer coisa anexada ao rig de
+    um Sim</strong>: ele existe apenas no sistema de LOD de vegetação (árvores 2D vistas de longe), que é uma
+    parte totalmente separada do pipeline de renderização de personagens.
+  </p>
+  <p>
+    Nenhum mod da comunidade documentado — em fóruns, wikis ou repositórios públicos consultados durante a
+    pesquisa — relata ter conseguido billboard real em um acessório de Sim. A conclusão prática é que fazer o
+    acessório "olhar sempre pra câmera" exigiria alterar o shader ou o pipeline de renderização do próprio
+    engine, o que está completamente fora do alcance de CC (dados) ou de um script mod (lógica de jogo em
+    Python rodando sobre a API exposta). É por isso que a arquitetura deste mod abraça o comportamento padrão
+    de acessório rígido em vez de perseguir uma solução inviável — ver
+    <a href="index.html">a explicação de design em Início</a>.
+  </p>
+
+  <h2 id="companion-tool">Companion tool e S4TK</h2>
+  <p>
+    O jogo nunca lê um PNG solto em tempo de execução — só consome recursos já compilados dentro de um
+    <code>.package</code>. Isso é uma limitação estrutural do engine, não uma escolha de design deste mod.
+    O precedente mais próximo encontrado na comunidade é o <strong>Sims 4 Mod Manager</strong>, que também tem
+    uma ferramenta companion separada (fora do jogo) para gerar uma tela de carregamento customizada a partir
+    de uma foto do usuário — o mesmo padrão arquitetural adotado aqui: conversão offline, aplicação in-game.
+  </p>
+  <p>
+    Para a conversão PNG → formato de textura CAS (DST, um DDS "embaralhado" específico da Maxis) e a
+    manipulação do contêiner DBPF, a busca por bibliotecas Python maduras (PyPI: <code>pydbpf</code>,
+    <code>python-dbpf</code> e variações) não encontrou nada ativo ou confiável. O ferramental clássico da
+    comunidade para DBPF, <strong>s4pi / Sims4Tools</strong>, é .NET Framework clássico e não foi portado para
+    .NET Core/Mono — inviável de rodar de forma robusta em Linux.
+  </p>
+  <p>
+    A alternativa madura encontrada foi o <strong><a href="https://github.com/sims4toolkit">Sims4Toolkit
+    (S4TK)</a></strong>, um conjunto de pacotes Node.js/TypeScript ativamente mantido, licenciado MIT:
+  </p>
+  <ul>
+    <li><strong><code>@s4tk/models</code></strong> — leitura e escrita de <code>.package</code> (DBPF),
+      incluindo compressão/descompressão RefPack.</li>
+    <li><strong><code>@s4tk/images</code></strong> — conversão entre PNG e os formatos de textura DDS/DST
+      usados pelo CAS, resolvendo a parte mais difícil do pipeline (o encoding DST "embaralhado").</li>
+  </ul>
+  <p>
+    Essa é a razão de a companion tool deste projeto ser <strong>Node.js e não Python</strong>: não é uma
+    preferência de linguagem, é a ausência de alternativa Python madura para a parte que realmente importa
+    (DBPF + DST). O script mod continua em Python porque essa parte <em>é</em> obrigatoriamente Python — é o
+    que o jogo embute.
+  </p>
+
+  <h2 id="persistencia">Persistência de dados por Sim</h2>
+  <p>
+    Não existe API nativa da EA para anexar um dado arbitrário (como "qual foto pertence a este Sim") a um
+    objeto <code>Sim</code> de forma persistente através de save/load. Dois padrões de solução aparecem no
+    S4CL:
+  </p>
+  <h4>Opção adotada: arquivo externo</h4>
+  <p>
+    <strong><code>CommonPersistedSimDataStorage</code></strong> /
+    <strong><code>CommonFilePersistenceService</code></strong> do S4CL: um JSON externo, fora do save do jogo,
+    em <code>Mods/mod_data/&lt;nome-do-mod&gt;/</code>, chaveado por <code>sim_id</code> combinado com o GUID
+    do save slot (para não misturar dados entre saves diferentes ou saves duplicados/renomeados). É mais
+    simples de implementar e depurar (é só um JSON legível), ao custo de viver fora do arquivo de save
+    propriamente dito — copiar/mover só o <code>.save</code> sem levar a pasta <code>mod_data</code> junto
+    perde a atribuição de fotos.
+  </p>
+  <h4>Alternativa mais robusta, não adotada inicialmente</h4>
+  <p>
+    <strong><code>CommonHiddenHouseholdPersistenceService</code></strong> do S4CL: grava um blob JSON no campo
+    <code>.description</code> de um <code>Household</code> (residência) invisível criado só para esse fim,
+    dentro do save de verdade do jogo. É mais robusto (viaja junto com o <code>.save</code>, sobrevive a
+    backup/restore do save inteiro), mas mais complexo de implementar e de depurar. Fica documentado aqui como
+    caminho de evolução caso o arquivo externo se mostre insuficiente na prática.
+  </p>
+
+  <h2 id="ferramental">Panorama do ferramental: Linux vs. Windows</h2>
+  <table>
+    <thead><tr><th>Ferramenta</th><th>Plataforma</th><th>Papel</th><th>Uso neste projeto</th></tr></thead>
+    <tbody>
+      <tr><td>CPython 3.7</td><td>cross-platform</td><td>Interpretador embutido no jogo</td><td>Alvo de bytecode do script mod</td></tr>
+      <tr><td>s4pi / Sims4Tools</td><td>.NET Framework (Windows)</td><td>Manipulação de DBPF "clássica" da comunidade</td><td>Não usado — não roda bem em Linux</td></tr>
+      <tr><td>Sims4Studio</td><td>.NET (Windows nativo; Wine+.NET6 no Linux)</td><td>GUI para criar CAS parts, tuning, etc.</td><td>Usado uma única vez para o CASP template</td></tr>
+      <tr><td>Sims4Toolkit (S4TK)</td><td>Node.js — cross-platform</td><td>Ler/escrever DBPF e converter texturas via código</td><td>Motor da companion tool</td></tr>
+      <tr><td>Sims4CommunityLibrary (S4CL)</td><td>Python — cross-platform (dentro do jogo)</td><td>Framework de conveniência para script mods</td><td>Base do script mod (comandos, eventos, persistência)</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Essa tabela resume por que a stack ficou "híbrida": nenhuma linguagem única cobre as duas metades do
+    problema (dentro do jogo é Python por imposição do engine; fora do jogo, manipular DBPF de forma madura e
+    portátil é Node.js). Mais detalhes de setup em <a href="compilacao.html">Compilação</a>.
+  </p>
+
+  <h2 id="fontes">Fontes</h2>
+  <p class="src">
+    Conhecimento consolidado a partir de engenharia reversa comunitária documentada em wikis e repositórios
+    públicos de modding do The Sims 4 (Sims4CommunityLibrary/S4CL e seu fork DeviantGameMods, documentação e
+    changelog do Sims4Toolkit/S4TK, discussões técnicas sobre o formato DBPF originado no SimCity 4), além de
+    observação de comportamento de mods publicados pela comunidade (Sims 4 Mod Manager, entre outros). Onde uma
+    afirmação não pôde ser confirmada de forma independente durante a pesquisa, isso está sinalizado
+    explicitamente no texto (ex.: o caminho <code>IMAG</code> para textura, a automação de Wine no CI).
+  </p>
+</main>
+
+<footer class="site">
+  <div class="footer-inner">
+    <p>Photo Face Mod — mod não-oficial para The Sims 4. Não afiliado à Electronic Arts/Maxis.</p>
+    <p>Repositório: <a href="https://github.com/rpagliuca/sims4-photo-face-mod">github.com/rpagliuca/sims4-photo-face-mod</a></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  function current(){
+    var attr = root.getAttribute('data-theme');
+    if (attr) return attr;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateLabel(){
+    var btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    btn.textContent = current() === 'dark' ? '☀️ Tema claro' : '🌙 Tema escuro';
+  }
+  var saved = localStorage.getItem('pfm-theme');
+  if (saved) root.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', function(){
+    updateLabel();
+    var btn = document.getElementById('theme-toggle');
+    if (btn) {
+      btn.addEventListener('click', function(){
+        var next = current() === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('pfm-theme', next);
+        updateLabel();
+      });
+    }
+  });
+})();
+</script>
+</body>
+</html>

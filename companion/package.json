@@ -1,0 +1,24 @@
+{
+  "name": "sims4-photo-face-companion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CLI companion tool that injects a user photo as a CAS Part texture into a .package (DBPF) for the Sims 4 Photo Face mod.",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "bin": {
+    "sims4-photo-face": "src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test ../tests/node/*.test.js",
+    "build": "echo 'TODO: standalone binary packaging (pkg/nexe) not implemented yet, see README.md' && exit 0"
+  },
+  "dependencies": {
+    "@s4tk/hashing": "^0.2.1",
+    "@s4tk/images": "^0.2.4",
+    "@s4tk/models": "^0.6.14",
+    "pngjs": "^7.0.0"
+  }
+}
