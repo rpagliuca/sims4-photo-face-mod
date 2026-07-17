@@ -12,7 +12,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test ../tests/node/*.test.js",
+    "test": "NODE_PATH=./node_modules node --test ../tests/node/*.test.js",
     "build": "echo 'TODO: standalone binary packaging (pkg/nexe) not implemented yet, see README.md' && exit 0"
   },
   "dependencies": {

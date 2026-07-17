@@ -48,6 +48,33 @@ function listTextureEntriesSorted(pkg) {
 }
 
 /**
+ * Number of swatches (DstImage resources) available in a package - used to
+ * size the photo_manifest.json index allocation (see manifest.js).
+ *
+ * @param {import("@s4tk/models").Package} pkg
+ * @returns {number}
+ */
+function countSwatches(pkg) {
+  return listTextureEntriesSorted(pkg).length;
+}
+
+/**
+ * Decides which .package file a companion run should build on top of: the
+ * previously-accumulated --output file if one already exists (so a second
+ * Sim's photo gets added to the same package instead of starting fresh from
+ * the template), or the template itself on the very first run for a given
+ * output path.
+ *
+ * @param {object} args
+ * @param {string} args.templatePath
+ * @param {string} args.outputPath
+ * @returns {string}
+ */
+function resolveBasePackagePath({ templatePath, outputPath }) {
+  return fs.existsSync(outputPath) ? outputPath : templatePath;
+}
+
+/**
  * Finds the CAS Part texture resource entry (a shuffled DST image) for a
  * specific swatch index inside a template package. This is the resource
  * slot the game reads when rendering that swatch's thumbnail and in-world
@@ -124,18 +151,27 @@ function writePackage(pkg, outputPath) {
 }
 
 /**
- * End-to-end helper: load template from disk, inject the photo, write the
- * resulting package to disk. This is what the CLI's `assign` command runs.
+ * End-to-end helper: load the accumulated output package if one already
+ * exists at `outputPath` (otherwise the template), inject the photo into the
+ * given swatch, and write the result back to `outputPath`. This is what the
+ * CLI's `assign` command runs.
+ *
+ * A single Mods-folder .package accumulates every Sim's swatch this way:
+ * the first `assign` for a given `--output` clones the template, and every
+ * subsequent `assign` for the SAME `--output` (a different photo_key/swatch,
+ * normally) reopens that same file and adds to it, instead of starting over
+ * from the template and losing previously-assigned swatches.
  *
  * @param {object} args
  * @param {string} args.templatePath
  * @param {Buffer} args.pngBuffer
  * @param {string} args.outputPath
- * @param {number} args.swatchIndex Zero-based swatch index (decided by the Python mod).
+ * @param {number} args.swatchIndex Zero-based swatch index (resolved via the photo_manifest).
  * @returns {Promise<{ outputPath: string, textureKey: import("@s4tk/models").ResourceKey }>}
  */
 async function assignPhotoToTemplateFile({ templatePath, pngBuffer, outputPath, swatchIndex }) {
-  const pkg = loadTemplatePackage(templatePath);
+  const basePath = resolveBasePackagePath({ templatePath, outputPath });
+  const pkg = loadTemplatePackage(basePath);
   const { textureKey } = await assignPhotoToPackage(pkg, pngBuffer, swatchIndex);
   writePackage(pkg, outputPath);
   return { outputPath, textureKey };
@@ -144,6 +180,8 @@ async function assignPhotoToTemplateFile({ templatePath, pngBuffer, outputPath, 
 module.exports = {
   loadTemplatePackage,
   listTextureEntriesSorted,
+  countSwatches,
+  resolveBasePackagePath,
   findTextureEntryForSwatch,
   assignPhotoToPackage,
   writePackage,

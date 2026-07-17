@@ -187,28 +187,33 @@ python3 -m compileall -b src/photo_face_mod/
       testes de integridade — o <code>.package</code> "de verdade" de cada jogador é gerado sob demanda a
       partir da foto dele, ver <a href="instalacao.html">Instalação</a>).</li>
   </ol>
-  <pre><code># exemplo do fluxo (consulte o Makefile/README na raiz do repo para os
-# nomes exatos dos alvos e scripts, que podem evoluir com o projeto):
+  <pre><code># 1) .ts4script (usa build/build_ts4script.py — chama py_compile internamente,
+#    rode com um Python 3.7 real para bytecode compativel com o jogo)
+python3.7 build/build_ts4script.py --output build/dist/photofacemod.ts4script
+# ou, via Makefile:
+make build-ts4script
 
-# 1) bytecode 3.7
-pyenv shell 3.7.17
-python3 -m compileall -b src/photo_face_mod/
-
-# 2) empacotar .ts4script
-cd src/photo_face_mod/
-zip -r ../../build/photofacemod.ts4script . -i '*.pyc'
-cd -
-
-# 3) companion tool: gerar .package de exemplo a partir do template CASP
+# 2) companion tool: gerar o .package de um Sim a partir do template CASP
 cd companion/
-npm run build          # compila a companion tool (TypeScript → JS, se aplicável)
-node dist/cli.js pack --template ../packages/casp_template --photo example.png --out ../build/example.package
+npm install
+node src/index.js assign \
+  --photo ../example.png \
+  --photo-key fulano \
+  --manifest ../build/dist/photo_manifest.json \
+  --template ../packages/casp_template/base.package \
+  --output ../build/dist/photofacemod.package \
+  --sim-name "Fulano"
 cd -</code></pre>
   <p>
-    Os nomes exatos de scripts (<code>npm run build</code>, alvos de Makefile etc.) devem ser confirmados no
-    <code>package.json</code> da <code>companion/</code> e em eventual <code>Makefile</code>/README na raiz do
-    repositório — esta página descreve o <em>fluxo conceitual</em> do build, que se mantém estável mesmo que
-    os comandos concretos evoluam.
+    <code>--photo-key</code> aloca (ou reaproveita, se já existir) um swatch livre no
+    <code>photo_manifest.json</code> — é esse arquivo que o mod Python (<code>PhotoManifest</code>) lê em
+    runtime para resolver o comando <code>photofacemod.assign &lt;photo_key&gt;</code>. Rodar o comando de novo
+    para outro Sim/foto <strong>acrescenta</strong> ao mesmo <code>--output</code> em vez de sobrescrever (o arquivo já
+    existente vira a base, não o template puro), então um único <code>.package</code> acumula todos os Sims.
+    <code>packages/casp_template/base.package</code> ainda não existe no repositório (ver
+    seção seguinte) — para desenvolvimento/testes, a companion tool usa um template sintético gerado em
+    memória (<code>companion/src/syntheticTemplate.js</code>), sem precisar do arquivo real. Detalhes e
+    exemplos completos em <code>companion/README.md</code>.
   </p>
 
   <h2 id="casp-automacao">O CASP template e a automação via Wine</h2>

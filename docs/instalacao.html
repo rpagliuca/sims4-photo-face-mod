@@ -168,11 +168,23 @@ Mods/
     <a href="base-de-conhecimento.html#casp-template">template CASP</a> já incluído no repositório/release.
     Ela roda no computador do jogador (Windows), não dentro do jogo:
   </p>
-  <pre><code># requer Node.js 18+ instalado no Windows
-node companion/dist/cli.js pack ^
-  --template packages/casp_template ^
+  <pre><code># requer Node.js 20+ instalado no Windows
+node companion/src/index.js assign ^
   --photo "C:\caminho\para\minha-foto.png" ^
-  --out "Mods\PhotoFaceMod\minha-foto.package"</code></pre>
+  --photo-key rafael ^
+  --manifest "Mods\PhotoFaceMod\photo_manifest.json" ^
+  --template packages\casp_template\base.package ^
+  --output "Mods\PhotoFaceMod\photofacemod.package" ^
+  --sim-name "Rafael"</code></pre>
+  <p>
+    <code>--photo-key</code> é o identificador que você vai digitar depois dentro do jogo
+    (<code>photofacemod.assign rafael</code>) — escolha algo curto e sem espaços. Rode este comando
+    <strong>uma vez por Sim/foto</strong>: cada execução aloca automaticamente um swatch livre no
+    <code>photo_manifest.json</code> e acrescenta a textura no <strong>mesmo</strong> arquivo
+    <code>.package</code> (se ele já existir, a ferramenta abre o que já está lá em vez do template puro,
+    então fotos de Sims anteriores não são perdidas). Rodar de novo com o mesmo <code>--photo-key</code>
+    atualiza a foto desse Sim, sem gastar um swatch novo.
+  </p>
   <p>
     Recomendações para a foto de entrada: uma imagem quadrada ou 4:3, com o rosto centralizado e bem
     enquadrado — lembre que ela vai aparecer <strong>chapada e sem correção de perspectiva</strong>
@@ -180,8 +192,9 @@ node companion/dist/cli.js pack ^
     mais legíveis, mesmo com o efeito tosco.
   </p>
   <p>
-    Depois de gerado, o <code>.package</code> vai para dentro de <code>Mods/PhotoFaceMod/</code> junto com o
-    <code>.ts4script</code>, seguindo a regra de pastas acima.
+    Depois de gerado, o <code>.package</code> e o <code>photo_manifest.json</code> ficam dentro de
+    <code>Mods/PhotoFaceMod/</code> junto com o <code>.ts4script</code>, seguindo a regra de pastas acima —
+    é o mod Python quem lê o <code>photo_manifest.json</code> em runtime para saber quais fotos existem.
   </p>
 
   <h2>Atribuindo a foto a um Sim, dentro do jogo</h2>
