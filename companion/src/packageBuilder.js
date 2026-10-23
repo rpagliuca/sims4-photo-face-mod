@@ -105,12 +105,43 @@ async function addPhotoCasp(pkg, photoKey, pngBuffer, generated = new Set()) {
   const caspInstance = deriveInstanceId(photoKey, "casp");
   const textureInstance = deriveInstanceId(photoKey, "texture");
   caspBuffer.writeBigUInt64LE(textureInstance, diffuse.at);
+  makeNameUnique(caspBuffer, caspInstance);
 
   const textureKey = { type: RLE2_RESOURCE_TYPE, group: diffuse.group, instance: textureInstance };
   const caspKey = { type: CASP_RESOURCE_TYPE, group: template.key.group, instance: caspInstance };
   upsert(pkg, textureKey, await photoToTextureResource(pngBuffer));
   upsert(pkg, caspKey, RawResource.from(caspBuffer));
   return { caspInstance, textureInstance };
+}
+
+/**
+ * The CAS catalog groups parts with the same internal name into one item
+ * with swatches (validated in game: 30 clones with the template's name showed
+ * up as a single thumbnail). The template's name ends with the 18-digit
+ * timestamp Sims4Studio appends; swapping those digits for ones derived from
+ * the clone's instance keeps the length, so no offset in the CASP moves.
+ *
+ * The name is a 7-bit-length-prefixed big-endian UTF-16 string at offset 12.
+ *
+ * @param {Buffer} casp CASP bytes (mutated).
+ * @param {bigint} instance
+ */
+function makeNameUnique(casp, instance) {
+  let pos = 12;
+  let length = 0;
+  let shift = 0;
+  let byte;
+  do {
+    byte = casp[pos++];
+    length |= (byte & 0x7f) << shift;
+    shift += 7;
+  } while (byte & 0x80);
+  const name = Buffer.from(casp.subarray(pos, pos + length)).swap16().toString("utf16le");
+  const match = /\d{18}$/.exec(name);
+  if (!match) throw new Error(`Nome do CASP template sem o carimbo de 18 dígitos: ${name}`);
+  const digits = (instance % 10n ** 18n).toString().padStart(18, "0");
+  const renamed = name.slice(0, match.index) + digits;
+  Buffer.from(renamed, "utf16le").swap16().copy(casp, pos);
 }
 
 function upsert(pkg, key, value) {
@@ -137,6 +168,7 @@ module.exports = {
   loadTemplatePackage,
   resolveBasePackagePath,
   readCaspTgis,
+  makeNameUnique,
   findTemplateCasp,
   addPhotoCasp,
   writePackage,

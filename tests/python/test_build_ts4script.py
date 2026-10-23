@@ -19,8 +19,7 @@ def test_build_contains_expected_pyc_files(tmp_path):
         names = set(zf.namelist())
     assert "mod_entrypoint.pyc" in names
     assert "photo_face_mod/__init__.pyc" in names
-    assert "photo_face_mod/core.pyc" in names
-    assert "photo_face_mod/hooks.pyc" in names
+    assert "photo_face_mod/manifest.pyc" in names
     assert "photo_face_mod/ts4_integration.pyc" in names
     assert all(name.endswith(".pyc") for name in names)
 

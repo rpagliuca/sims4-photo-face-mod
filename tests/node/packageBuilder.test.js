@@ -66,3 +66,21 @@ test("findTemplateCasp refuses an accumulated package when the manifest is lost"
   await addPhotoCasp(pkg, "fulano", makeSolidColorPng(8));
   assert.throws(() => findTemplateCasp(pkg), /exatamente 1 CASP/);
 });
+
+test("each clone gets its own internal name, same length as the template's", async () => {
+  const name = (buf) => {
+    const len = buf[12];
+    return Buffer.from(buf.subarray(13, 13 + len)).swap16().toString("utf16le");
+  };
+  const pkg = loadTemplatePackage(TEMPLATE_PATH);
+  const a = await addPhotoCasp(pkg, "fulano", makeSolidColorPng(8));
+  const b = await addPhotoCasp(pkg, "ciclano", makeSolidColorPng(8), new Set([a.caspInstance]));
+  const byInstance = (i) => casps(pkg).find((e) => e.key.instance === i).value.getBuffer();
+  const template = name(byInstance(TEMPLATE_CASP));
+  const na = name(byInstance(a.caspInstance));
+  const nb = name(byInstance(b.caspInstance));
+  assert.notEqual(na, template);
+  assert.notEqual(na, nb);
+  assert.equal(na.length, template.length);
+  assert.equal(na.slice(0, -18), template.slice(0, -18));
+});
