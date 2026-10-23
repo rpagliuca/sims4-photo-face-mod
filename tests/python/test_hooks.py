@@ -1,22 +1,22 @@
-import zone_spin_up
+import sys
+
+import zone
 from fakes import FakeSim
 
 from photo_face_mod import hooks, ts4_integration
 from photo_face_mod.core import PhotoAssignmentStore
 
 
-def test_install_wraps_load_and_calls_original(monkeypatch):
-    hooks.install()
-    zone = zone_spin_up.ZoneSpinUp()
-    result = zone.load()
-    assert result == "original_load_result"
+def test_install_wraps_the_hook_and_calls_original():
+    assert hooks.install() is True
+    assert zone.Zone().on_loading_screen_animation_finished() == "original_result"
 
 
 def test_install_is_idempotent():
     hooks.install()
-    first_load = zone_spin_up.ZoneSpinUp.load
+    first = zone.Zone.on_loading_screen_animation_finished
     hooks.install()
-    assert zone_spin_up.ZoneSpinUp.load is first_load
+    assert zone.Zone.on_loading_screen_animation_finished is first
 
 
 def test_installed_hook_applies_photos_to_all_sims(tmp_path, monkeypatch):
@@ -29,6 +29,25 @@ def test_installed_hook_applies_photos_to_all_sims(tmp_path, monkeypatch):
     fake_services._manager.sims = [sim.sim_info]
 
     hooks.install()
-    zone_spin_up.ZoneSpinUp().load()
+    zone.Zone().on_loading_screen_animation_finished()
 
     assert sim.sim_info.resend_count == 1
+
+
+def test_a_failing_apply_does_not_break_the_load(monkeypatch):
+    def boom():
+        raise RuntimeError("x")
+
+    monkeypatch.setattr(hooks, "apply_photos_to_all_sims", boom)
+    monkeypatch.delattr(zone.Zone, hooks._PATCHED_ATTR, raising=False)
+    original = zone.Zone.on_loading_screen_animation_finished
+    try:
+        hooks.install()
+        assert zone.Zone().on_loading_screen_animation_finished() == "original_result"
+    finally:
+        zone.Zone.on_loading_screen_animation_finished = original
+
+
+def test_install_returns_false_when_the_game_module_is_missing(monkeypatch):
+    monkeypatch.setitem(sys.modules, "zone", None)
+    assert hooks.install() is False
