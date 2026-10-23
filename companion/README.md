@@ -18,7 +18,7 @@ npm install
 ```bash
 node src/index.js assign \
   --photo foto.png \
-  --photo-key rafael \
+  --photo-key fulano \
   --manifest "Mods/PhotoFaceMod/photo_manifest.json" \
   --template ../packages/casp_template/base.package \
   --output "Mods/PhotoFaceMod/photofacemod.package"

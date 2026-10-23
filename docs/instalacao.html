@@ -171,14 +171,14 @@ Mods/
   <pre><code># requer Node.js 20+ instalado no Windows
 node companion/src/index.js assign ^
   --photo "C:\caminho\para\minha-foto.png" ^
-  --photo-key rafael ^
+  --photo-key fulano ^
   --manifest "Mods\PhotoFaceMod\photo_manifest.json" ^
   --template packages\casp_template\base.package ^
   --output "Mods\PhotoFaceMod\photofacemod.package" ^
-  --sim-name "Rafael"</code></pre>
+  --sim-name "Fulano"</code></pre>
   <p>
     <code>--photo-key</code> é o identificador que você vai digitar depois dentro do jogo
-    (<code>photofacemod.assign rafael</code>) — escolha algo curto e sem espaços. Rode este comando
+    (<code>photofacemod.assign fulano</code>) — escolha algo curto e sem espaços. Rode este comando
     <strong>uma vez por Sim/foto</strong>: cada execução cria um acessório para a foto, registra-o no
     <code>photo_manifest.json</code> e o acrescenta no <strong>mesmo</strong> arquivo
     <code>.package</code> (se ele já existir, a ferramenta abre o que já está lá em vez do template puro,

@@ -29,7 +29,7 @@ test("the real template has one CASP whose TGI list points at its RLE2 diffuse",
 test("addPhotoCasp clones the CASP pointing at a new texture, keeping meshes shared", async () => {
   const pkg = loadTemplatePackage(TEMPLATE_PATH);
   const before = pkg.entries.length;
-  const { caspInstance, textureInstance } = await addPhotoCasp(pkg, "rafael", makeSolidColorPng(8));
+  const { caspInstance, textureInstance } = await addPhotoCasp(pkg, "fulano", makeSolidColorPng(8));
 
   assert.equal(pkg.entries.length, before + 2);
   const clone = casps(pkg).find((e) => e.key.instance === caspInstance);
@@ -47,15 +47,15 @@ test("addPhotoCasp clones the CASP pointing at a new texture, keeping meshes sha
 
 test("two photo_keys get distinct CASPs; re-running a key replaces it in place", async () => {
   const pkg = loadTemplatePackage(TEMPLATE_PATH);
-  const a = await addPhotoCasp(pkg, "rafael", makeSolidColorPng(8));
+  const a = await addPhotoCasp(pkg, "fulano", makeSolidColorPng(8));
   const generated = new Set([a.caspInstance]);
-  const b = await addPhotoCasp(pkg, "irmao", makeSolidColorPng(8), generated);
+  const b = await addPhotoCasp(pkg, "ciclano", makeSolidColorPng(8), generated);
   generated.add(b.caspInstance);
   assert.notEqual(a.caspInstance, b.caspInstance);
   assert.notEqual(a.textureInstance, b.textureInstance);
 
   const count = pkg.entries.length;
-  const again = await addPhotoCasp(pkg, "rafael", makeSolidColorPng(8, [1, 2, 3, 255]), generated);
+  const again = await addPhotoCasp(pkg, "fulano", makeSolidColorPng(8, [1, 2, 3, 255]), generated);
   assert.equal(again.caspInstance, a.caspInstance);
   assert.equal(pkg.entries.length, count);
   assert.equal(casps(pkg).length, 3);
@@ -63,6 +63,6 @@ test("two photo_keys get distinct CASPs; re-running a key replaces it in place",
 
 test("findTemplateCasp refuses an accumulated package when the manifest is lost", async () => {
   const pkg = loadTemplatePackage(TEMPLATE_PATH);
-  await addPhotoCasp(pkg, "rafael", makeSolidColorPng(8));
+  await addPhotoCasp(pkg, "fulano", makeSolidColorPng(8));
   assert.throws(() => findTemplateCasp(pkg), /exatamente 1 CASP/);
 });

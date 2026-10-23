@@ -13,7 +13,7 @@ test("loadManifest returns {} when the file doesn't exist yet", (t) => {
 
 test("saveManifest + loadManifest round-trip, creating parent directories", (t) => {
   const manifestPath = path.join(makeTmpDir(t), "nested", "photo_manifest.json");
-  const manifest = { rafael: "0x8000000000000001", irmao: "0x8000000000000002" };
+  const manifest = { fulano: "0x8000000000000001", ciclano: "0x8000000000000002" };
   saveManifest(manifestPath, manifest);
   assert.deepEqual(loadManifest(manifestPath), manifest);
 });
