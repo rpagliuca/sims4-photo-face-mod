@@ -31,15 +31,15 @@ function setup(t) {
 test("runAssign() writes the package with the photo CASP and records it in the manifest", async (t) => {
   const s = setup(t);
   const result = await runAssign({
-    photo: s.photo("rafael", [255, 0, 0, 255]),
-    "photo-key": "rafael",
+    photo: s.photo("fulano", [255, 0, 0, 255]),
+    "photo-key": "fulano",
     manifest: s.manifest,
     "sim-name": "Fulano",
     template: TEMPLATE_PATH,
     output: s.output,
   });
 
-  assert.deepEqual(loadManifest(s.manifest), { rafael: formatInstance(result.caspInstance) });
+  assert.deepEqual(loadManifest(s.manifest), { fulano: formatInstance(result.caspInstance) });
   const pkg = Package.from(fs.readFileSync(s.output));
   assert.ok(pkg.entries.some((e) => e.key.type === CASP_RESOURCE_TYPE && e.key.instance === result.caspInstance));
 });
@@ -49,19 +49,19 @@ test("assign for two Sims accumulates both CASPs in one .package; re-running rep
   const run = (key, rgba) =>
     runAssign({ photo: s.photo(key, rgba), "photo-key": key, manifest: s.manifest, template: TEMPLATE_PATH, output: s.output });
 
-  const rafael = await run("rafael", [255, 0, 0, 255]);
-  const irmao = await run("irmao", [0, 0, 255, 255]);
-  const rafaelAgain = await run("rafael", [0, 255, 0, 255]);
+  const fulano = await run("fulano", [255, 0, 0, 255]);
+  const ciclano = await run("ciclano", [0, 0, 255, 255]);
+  const fulanoAgain = await run("fulano", [0, 255, 0, 255]);
 
-  assert.equal(rafaelAgain.caspInstance, rafael.caspInstance);
+  assert.equal(fulanoAgain.caspInstance, fulano.caspInstance);
   assert.deepEqual(loadManifest(s.manifest), {
-    irmao: formatInstance(irmao.caspInstance),
-    rafael: formatInstance(rafael.caspInstance),
+    ciclano: formatInstance(ciclano.caspInstance),
+    fulano: formatInstance(fulano.caspInstance),
   });
   const pkg = Package.from(fs.readFileSync(s.output));
   const casps = pkg.entries.filter((e) => e.key.type === CASP_RESOURCE_TYPE).map((e) => e.key.instance);
   assert.equal(casps.length, 3, "template + 2 photos");
-  assert.ok(casps.includes(rafael.caspInstance) && casps.includes(irmao.caspInstance));
+  assert.ok(casps.includes(fulano.caspInstance) && casps.includes(ciclano.caspInstance));
 });
 
 test("main() end-to-end via the `assign` subcommand", async (t) => {

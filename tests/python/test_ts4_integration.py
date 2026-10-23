@@ -29,7 +29,7 @@ def _use(monkeypatch, tmp_path, manifest_data=None):
 
 def test_assign_photo_with_no_sim_selected_reports_error():
     fake_argument_helpers.get_optional_target_result = None
-    result = ts4_integration.assign_photo("rafael", None, _connection=None)
+    result = ts4_integration.assign_photo("fulano", None, _connection=None)
     assert result is False
     assert any("nenhum Sim selecionado" in msg for msg in fake_commands.output_calls)
 
@@ -43,10 +43,10 @@ def test_assign_photo_unknown_key_reports_error(tmp_path, monkeypatch, fake_sim)
 
 
 def test_assign_photo_puts_the_cas_part_on_every_outfit_replacing_glasses(tmp_path, monkeypatch, fake_sim):
-    store = _use(monkeypatch, tmp_path, {"rafael": "0x%016X" % PHOTO_A})
+    store = _use(monkeypatch, tmp_path, {"fulano": "0x%016X" % PHOTO_A})
     fake_argument_helpers.get_optional_target_result = fake_sim
 
-    result = ts4_integration.assign_photo("rafael", None, _connection=None)
+    result = ts4_integration.assign_photo("fulano", None, _connection=None)
 
     assert result is True
     assert store.get(fake_sim.sim_info.sim_id) == PHOTO_A
@@ -65,9 +65,9 @@ def test_assigning_another_photo_swaps_the_part(tmp_path, monkeypatch, fake_sim)
 
 
 def test_remove_photo_takes_the_part_off(tmp_path, monkeypatch, fake_sim):
-    store = _use(monkeypatch, tmp_path, {"rafael": "0x%016X" % PHOTO_A})
+    store = _use(monkeypatch, tmp_path, {"fulano": "0x%016X" % PHOTO_A})
     fake_argument_helpers.get_optional_target_result = fake_sim
-    ts4_integration.assign_photo("rafael", None, _connection=None)
+    ts4_integration.assign_photo("fulano", None, _connection=None)
 
     result = ts4_integration.remove_photo(None, _connection=None)
 
@@ -89,12 +89,12 @@ def test_remove_photo_when_none_assigned(tmp_path, monkeypatch, fake_sim):
 
 
 def test_list_photos_outputs_available_keys(tmp_path, monkeypatch):
-    _use(monkeypatch, tmp_path, {"rafael": "0x1", "irmao": "0x2"})
+    _use(monkeypatch, tmp_path, {"fulano": "0x1", "ciclano": "0x2"})
 
     result = ts4_integration.list_photos(_connection=None)
 
     assert result is True
-    assert any("rafael" in msg and "irmao" in msg for msg in fake_commands.output_calls)
+    assert any("fulano" in msg and "ciclano" in msg for msg in fake_commands.output_calls)
 
 
 def test_apply_photo_to_sim_noop_when_unassigned(tmp_path, monkeypatch, fake_sim):
