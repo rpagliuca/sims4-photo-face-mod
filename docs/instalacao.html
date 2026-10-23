@@ -179,14 +179,15 @@ node companion/src/index.js assign ^
   <p>
     <code>--photo-key</code> é o identificador que você vai digitar depois dentro do jogo
     (<code>photofacemod.assign rafael</code>) — escolha algo curto e sem espaços. Rode este comando
-    <strong>uma vez por Sim/foto</strong>: cada execução aloca automaticamente um swatch livre no
-    <code>photo_manifest.json</code> e acrescenta a textura no <strong>mesmo</strong> arquivo
+    <strong>uma vez por Sim/foto</strong>: cada execução cria um acessório para a foto, registra-o no
+    <code>photo_manifest.json</code> e o acrescenta no <strong>mesmo</strong> arquivo
     <code>.package</code> (se ele já existir, a ferramenta abre o que já está lá em vez do template puro,
     então fotos de Sims anteriores não são perdidas). Rodar de novo com o mesmo <code>--photo-key</code>
-    atualiza a foto desse Sim, sem gastar um swatch novo.
+    troca a foto desse acessório no lugar.
   </p>
   <p>
-    Recomendações para a foto de entrada: uma imagem quadrada ou 4:3, com o rosto centralizado e bem
+    Recomendações para a foto de entrada: PNG em retrato, com o rosto centralizado (ela é cortada no centro
+    para a proporção da placa, 22 x 28 cm, e reduzida a 256 x 128 px dentro da textura do jogo) e bem
     enquadrado — lembre que ela vai aparecer <strong>chapada e sem correção de perspectiva</strong>
     (ver <a href="index.html">por que isso é proposital</a>), então fotos já "de frente" tendem a ficar
     mais legíveis, mesmo com o efeito tosco.

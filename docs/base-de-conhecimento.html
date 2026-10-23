@@ -225,19 +225,20 @@
       <tr><td>CASP (CAS Part)</td><td><code>0x034AEECB</code></td><td>Define o acessório em si — metadados, slot, referências às outras entradas</td></tr>
       <tr><td>Thumbnail de CASP</td><td><code>0x3C1AF1F2</code></td><td>Miniatura mostrada no CAS (Create-a-Sim)</td></tr>
       <tr><td>GEOM (geometria)</td><td><code>0x015A1849</code></td><td>Malha 3D do acessório (a "plaquinha" plana)</td></tr>
-      <tr><td>Textura DST</td><td><code>0x00B2D882</code></td><td>Formato usado pela maioria das CAS parts — DDS "embaralhado" (shuffled), é onde a foto convertida entra</td></tr>
-      <tr><td>RLE2 / DDS DXT5</td><td><code>0x3453CF95</code></td><td>Variante de textura comprimida usada em alguns contextos (não-shuffled)</td></tr>
+      <tr><td>Textura DST</td><td><code>0x00B2D882</code></td><td>DDS "embaralhado" (shuffled); <strong>não</strong> é o formato que o Sims4Studio grava para a difusa de CAS</td></tr>
+      <tr><td>RLE2 (DXT5 com run-length)</td><td><code>0x3453CF95</code></td><td><strong>Difusa de CAS part</strong>: é onde a foto entra (validado no jogo em 2026-10-23)</td></tr>
       <tr><td>Tuning combinado</td><td><code>0x62E94D38</code></td><td>XML de tuning (definições de comportamento/dados) compilado</td></tr>
       <tr><td>SimData</td><td><code>0x545AC67A</code></td><td>Dados binários estruturados associados a tuning</td></tr>
       <tr><td>IMAG (PNG cru)</td><td><em>não documentado oficialmente</em></td><td>Existe um tipo para imagem crua sem DXT — ver risco abaixo</td></tr>
     </tbody>
   </table>
   <div class="note">
-    <strong>Risco conhecido, não validado:</strong> em teoria, se algum slot de CAS aceitasse referenciar uma
-    entrada <code>IMAG</code> (PNG cru) em vez de uma textura DST/DDS, o pipeline de conversão de imagem seria
-    trivial — sem precisar codificar DXT/DST. Isso <strong>não foi confirmado na prática</strong>; a suposição
-    seguranca é que CASP exige textura no formato DST comprimido, e é isso que o pipeline atual assume. Se
-    alguém validar o caminho <code>IMAG</code> no futuro, vale revisitar e simplificar a companion tool.
+    <strong>RLE2:</strong> cabeçalho de 16 bytes (<code>DXT5</code>, <code>RLE2</code>, largura, altura, mips),
+    um cabeçalho de 20 bytes por mip e cinco fluxos: comandos <code>uint16 (count &lt;&lt; 2) | op</code>
+    (0 = blocos transparentes, 2 = opacos, só cor; 1 = demais) e as quatro partes de cada bloco DXT5. A
+    companion tool tem um codificador próprio (<code>companion/src/rle2.js</code>, portado do
+    <code>RLEResource.cs</code> do s4pi) e o teste confere que decodificar e recodificar a textura do
+    Sims4Studio devolve os mesmos bytes.
   </div>
 
   <h2 id="casp-template">CASP: acessórios e o template base</h2>
@@ -247,30 +248,24 @@
     equipamento, faixa de idade/gênero, referências), a(s) textura(s), a geometria e o thumbnail.
   </p>
   <p>
-    Criar um CASP do zero via código é possível em teoria, mas envolve reproduzir uma quantidade grande de
-    metadados e convenções que o <strong>Sims4Studio</strong> (ferramenta GUI da comunidade) já resolve de
-    forma confiável. A decisão deste projeto foi: <strong>criar o CASP base uma única vez no Sims4Studio, já
-    com N swatches (variações)</strong> — um acessório de cabeça simples, plano, do tamanho de uma foto, com
-    (por exemplo) 8-16 swatches reservados — e versionar esse <code>.package</code> "template" no repositório
-    (<code>packages/casp_template/</code>). Cada swatch já nasce com sua <strong>própria resource key de
-    textura distinta</strong>, corretamente referenciada pelo CASP internamente (o Sims4Studio cuida disso na
-    hora de criar os swatches). A companion tool então abre esse template com o S4TK e
-    <strong>substitui apenas a textura do swatch correspondente ao índice atribuído a um Sim específico</strong>
-    (ver <a href="#persistencia">persistência por Sim</a>), sem tocar no CASP nem nos outros swatches.
-    Como cada swatch tem uma resource key própria, pacotes gerados para Sims diferentes (índices diferentes)
-    sobrescrevem chaves diferentes e <strong>coexistem sem conflito</strong> quando instalados juntos — ao
-    contrário de uma abordagem ingênua de "uma textura só", que faria o último pacote instalado sobrescrever
-    a foto de todo mundo. Isso evita reimplementar toda a complexidade de geração/parsing binário de CASP do
-    zero.
+    O CASP base foi criado <strong>uma única vez no Sims4Studio</strong>, clonando uns óculos do jogo base e
+    trocando a malha por uma placa plana (ver <code>packages/casp_template/README.md</code>). Para cada foto, a
+    companion tool <strong>clona o CASP</strong>: copia o registro, troca nele só a referência (TGI) da textura
+    difusa por uma textura nova com a foto e grava os dois com instances derivados do <code>photo_key</code>.
+    Malhas e região continuam as do template. Cada foto é uma peça própria do jogo, com ID próprio: é isso que
+    o mod põe no Sim.
   </p>
-  <div class="warn">
-    <strong>Sims4Studio é GUI-only, sem CLI, e roda em .NET (Windows nativo ou Wine + .NET 6 Desktop Runtime no
-    Linux).</strong> A criação do template é, por natureza, um passo manual/único feito pelo mantenedor — não faz
-    parte do pipeline de build repetido a cada foto. O CI tenta automatizar a geração via Wine de forma
-    best-effort (ver <a href="compilacao.html#casp-automacao">Compilação</a>), mas isso é experimental; se a
-    automação falhar ou ficar frágil, o caminho de fallback documentado é gerar/atualizar o template manualmente
-    no Windows ou numa VM e commitar o resultado.
-  </div>
+  <p>
+    A lista de TGIs do CASP começa no offset <code>u32@4 + 8</code>: um byte de contagem e entradas de 16 bytes
+    (instance <code>u64</code>, group <code>u32</code>, type <code>u32</code>). No template a difusa aparece uma só
+    vez, então trocar esse instance basta.
+  </p>
+  <p>
+    A textura de um Sim é um <strong>atlas único de 1024 x 2048</strong>, composto pelo jogo com todas as peças.
+    A região dos óculos (x 512..768, y 128..256) é onde a foto precisa ficar; o resto é transparente. Com UV
+    0..1 a placa mostraria o atlas inteiro.
+  </p>
+  <p><img src="img-jogo-placa.png" alt="A placa com a imagem de teste no rosto de uma Sim, dentro do jogo" style="max-width:260px"></p>
 
   <h2 id="rig">O rig e o osso b__Head__</h2>
   <p>
@@ -358,6 +353,26 @@
     backup/restore do save inteiro), mas mais complexo de implementar e de depurar. Fica documentado aqui como
     caminho de evolução caso o arquivo externo se mostre insuficiente na prática.
   </p>
+
+  <h2 id="validado-no-jogo">Validado no jogo (2026-10-23, versão 1.128.90)</h2>
+  <ul>
+    <li>A peça gerada pela companion tool aparece no CAS em <strong>Acessórios → Óculos</strong>, filtrando por
+      <em>Custom Content</em>, com a foto na miniatura e no rosto.</li>
+    <li><code>photofacemod.assign &lt;photo_key&gt;</code> põe a foto no Sim selecionado no modo ao vivo;
+      <code>photofacemod.remove</code> tira. O console não mostra a saída dos comandos, mas o efeito aparece na hora.</li>
+    <li>Depois de salvar, fechar e carregar o save, a foto continua no Sim, sem nenhuma exceção em
+      <code>lastException.txt</code>.</li>
+    <li>Aplicar a peça mexendo nas roupas: <code>save_outfits()</code> → editar as listas paralelas
+      <code>parts.ids</code> e <code>body_types_list.body_types</code> de cada roupa → gravar em
+      <code>sim_info._base.outfits</code> → <code>resend_outfits()</code> (o mesmo padrão do
+      <code>CommonSimOutfitIO</code> do S4CL). O body type vem de <code>cas.cas.get_caspart_bodytype</code>.</li>
+    <li><code>zone_spin_up.ZoneSpinUp</code> <strong>não existe</strong> (ModuleNotFoundError). O gancho de
+      carregamento usa <code>zone.Zone.on_loading_screen_animation_finished</code>.</li>
+    <li>Depois de uma atualização do jogo, ele <strong>desliga os mods sozinho</strong>: religar em
+      Opções → Outros → "Enable Custom Content and Mods" e reiniciar.</li>
+    <li>Com a placa a 1 cm dos óculos, o nariz atravessava; a 4 cm, não. Ficou uma linha escura fina na borda de
+      cima, que não atrapalha.</li>
+  </ul>
 
   <h2 id="ferramental">Panorama do ferramental: Linux vs. Windows</h2>
   <table>
