@@ -22,6 +22,8 @@ tecnicamente viável no engine do TS4 para esse efeito (billboard real
    reaplica quando um lote termina de carregar. Um comando de console
    (`photofacemod.assign <foto>`) atribui a foto ao Sim selecionado.
 
+**História do projeto, com prints:** https://rpagliuca.github.io/sims4-photo-face-mod/historia/
+
 Documentação completa (arquitetura, build, instalação, testes) em
 [`docs/`](docs/index.html).
 

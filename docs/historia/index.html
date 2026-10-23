@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photo Face: a história do mod</title>
+<meta name="description" content="Um agente de IA criou um mod de The Sims 4 que cola uma foto no rosto do Sim, operando um Windows remoto por captura de tela e clique. A cronologia, com prints.">
+<meta property="og:title" content="Um agente de IA fez um mod de The Sims 4 e testou dentro do jogo">
+<meta property="og:description" content="De uma ideia em julho a um Sim com cara de papelão em outubro. Cronologia com prints.">
+<meta property="og:image" content="https://rpagliuca.github.io/sims4-photo-face-mod/historia/img/capa.jpg">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root {
+    --bg: #f6efe4;
+    --surface: #fffaf2;
+    --ink: #2a2118;
+    --muted: #6d5d4b;
+    --line: #e0d2bd;
+    --accent: #a8672b;
+    --accent-ink: #ffffff;
+    --tag: #efe1cb;
+    --code: #2a2118;
+    --code-ink: #f6efe4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17130f;
+      --surface: #211b15;
+      --ink: #f1e6d6;
+      --muted: #b9a68e;
+      --line: #3a3027;
+      --accent: #e0a463;
+      --accent-ink: #17130f;
+      --tag: #2e261e;
+      --code: #0f0c09;
+      --code-ink: #f1e6d6;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17130f; --surface: #211b15; --ink: #f1e6d6; --muted: #b9a68e; --line: #3a3027;
+    --accent: #e0a463; --accent-ink: #17130f; --tag: #2e261e; --code: #0f0c09; --code-ink: #f1e6d6;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 0 16px 64px; }
+  img { display: block; max-width: 100%; height: auto; border-radius: 10px; }
+  figure { margin: 18px 0; }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; }
+  a { color: var(--accent); }
+  code { font: 14px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--tag); padding: 1px 5px; border-radius: 4px; }
+
+  .hero { padding: 36px 0 8px; display: grid; gap: 20px; }
+  .hero img { width: 100%; max-width: 420px; justify-self: center; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  .kicker { text-transform: uppercase; letter-spacing: .08em; font-size: 13px; color: var(--accent); font-weight: 700; margin: 0; }
+  h1 { font-size: clamp(28px, 7vw, 44px); line-height: 1.1; margin: 6px 0 12px; letter-spacing: -.01em; }
+  .lede { font-size: 19px; color: var(--muted); margin: 0; }
+
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 28px 0 8px; }
+  @media (min-width: 620px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .stat b { display: block; font-size: 26px; line-height: 1.1; }
+  .stat span { font-size: 13px; color: var(--muted); }
+
+  .strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 22px 0; }
+  .strip img { aspect-ratio: 3/4; object-fit: cover; width: 100%; }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .duo img { width: 100%; }
+
+  h2 { font-size: 26px; margin: 48px 0 8px; }
+  .timeline { list-style: none; padding: 0; margin: 0; border-left: 3px solid var(--line); }
+  .timeline > li { position: relative; padding: 0 0 26px 22px; }
+  .timeline > li::before {
+    content: ""; position: absolute; left: -9px; top: 6px; width: 15px; height: 15px;
+    border-radius: 50%; background: var(--accent); border: 3px solid var(--bg);
+  }
+  .when { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+  .timeline h3 { font-size: 20px; margin: 2px 0 6px; line-height: 1.25; }
+  .timeline p { margin: 6px 0; }
+  .gap { color: var(--muted); font-style: italic; }
+  .gap::before { background: var(--line) !important; }
+
+  .term {
+    background: var(--code); color: var(--code-ink); border-radius: 10px; padding: 12px 14px;
+    font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-x: auto; margin: 10px 0;
+  }
+  .term .bad { color: #ff8a80; }
+  .term .ok { color: #a5d6a7; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 10px 0; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+
+  ul.plain { padding-left: 20px; }
+  .cta { display: inline-block; background: var(--accent); color: var(--accent-ink); text-decoration: none; padding: 10px 16px; border-radius: 999px; font-weight: 700; margin: 8px 8px 0 0; }
+  footer { color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); margin-top: 48px; padding-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <div>
+    <p class="kicker">The Sims 4 · mod · agentes de IA</p>
+    <h1>Um agente de IA fez um mod de The Sims 4 e testou dentro do jogo</h1>
+    <p class="lede">O mod cola uma foto no rosto do Sim, chapada e sem perspectiva. O agente escreveu o código, montou o acessório 3D e jogou o jogo para conferir, operando um Windows remoto por captura de tela e clique.</p>
+  </div>
+  <img src="img/capa.jpg" alt="Sim no jogo com uma cara de papelão de óculos escuros no lugar do rosto" width="560" height="560">
+</header>
+
+<div class="stats">
+  <div class="stat"><b>2</b><span>sessões de agente, com 3 meses de intervalo</span></div>
+  <div class="stat"><b>~180</b><span>capturas de tela que o agente leu</span></div>
+  <div class="stat"><b>141</b><span>cliques no Windows remoto</span></div>
+  <div class="stat"><b>52</b><span>testes automatizados</span></div>
+</div>
+
+<div class="strip">
+  <img src="img/oculos-tres-quartos.jpg" alt="A Sim com a placa de papelão, vista de frente" loading="lazy">
+  <img src="img/oculos-lado.jpg" alt="Vista lateral: a placa é plana e fica presa à cabeça" loading="lazy">
+  <img src="img/oculos-calcada.jpg" alt="A Sim na calçada com a placa" loading="lazy">
+</div>
+
+<h2>Cronologia</h2>
+<p style="color:var(--muted);font-size:14px;margin-top:0">Horários de Brasília. Julho vem do histórico do git e das notas da tarefa; outubro, do registro completo da sessão.</p>
+
+<ol class="timeline">
+
+<li>
+  <div class="when">17 de julho · 19:21</div>
+  <h3>O pedido</h3>
+  <p>Um mod que atribui uma foto de perfil a cada Sim e a mostra sobre o rosto, em 2D puro. O pedido dizia: "o tosco é feature, não bug". Também pedia repositório público, documentação, testes automatizados e artefatos que funcionassem no Windows, gerados num laptop Linux.</p>
+</li>
+
+<li>
+  <div class="when">17 de julho · 19:39 a 20:29</div>
+  <h3>Primeira hora: pesquisa, código e release, sem abrir o jogo</h3>
+  <p>A pesquisa trouxe duas restrições. O motor do jogo não tem "billboard" (algo que vira sempre para a câmera) para nada preso ao Sim. E um script sozinho não consegue carregar uma imagem solta. O desenho final: um acessório de cabeça plano, um script em Python 3.7 (a versão embutida no jogo) e uma ferramenta em Node.js para converter fotos.</p>
+  <p>Uma hora e oito minutos depois do pedido havia repositório público, 55 testes, documentação em HTML e uma versão alfa publicada. Faltava a peça 3D, que só uma ferramenta gráfica de Windows, o Sims4Studio, sabe criar.</p>
+</li>
+
+<li>
+  <div class="when">20 a 24 de julho</div>
+  <h3>Tentativa no Linux</h3>
+  <p>O jogo foi comprado e instalado no laptop Linux, via Steam e Proton. O agente compartilhou a tela por VNC para a compra, e depois instalou o Sims4Studio no Wine, com .NET 6, clicando por <code>xdotool</code>.</p>
+  <div class="term"><span class="bad">wine: stack overflow</span>  (Sims4Studio fecha ao abrir)<br>Proton da Steam: <span class="bad">requires GLIBC_2.38</span></div>
+  <p>O Wine da distribuição era velho demais para o .NET 6, e o Proton exigia uma biblioteca do sistema mais nova. O agente parou e deixou pronto o comando para instalar um Wine atual. Em paralelo, o CI ficou fora do repositório: o token do GitHub não tinha permissão para arquivos de workflow.</p>
+</li>
+
+<li class="gap">
+  <div class="when">agosto e setembro</div>
+  <h3>Parado</h3>
+  <p>A tarefa ficou registrada com cinco passos pendentes.</p>
+</li>
+
+<li>
+  <div class="when">22 de outubro · 19:42</div>
+  <h3>Pedido por voz: "agora eu tenho um computador com Windows"</h3>
+  <p>O pedido foi ditado no celular. Um agente coordenador reabriu a tarefa e subiu um agente novo: Claude Opus 5.5, com esforço de raciocínio médio, que leu as notas de julho e começou.</p>
+  <p>Primeiro achado: o token do GitHub já tinha a permissão que faltava. O CI voltou em dois minutos, com os três jobs verdes.</p>
+</li>
+
+<li>
+  <div class="when">23 de outubro · manhã</div>
+  <h3>Entrando no Windows pelo Moonlight</h3>
+  <p>O dono disse só que o PC tinha Moonlight. O agente achou a máquina na rede pelo anúncio mDNS do Sunshine (o servidor de streaming), instalou o cliente no Linux e pediu um PIN. Os dois primeiros pedidos de pareamento se atropelaram; o terceiro deu certo.</p>
+  <figure><img src="img/sunshine-pin.jpg" alt="Página de pareamento do Sunshine com a mensagem Success" loading="lazy"><figcaption>O único passo no Windows que exigiu um humano: digitar o PIN.</figcaption></figure>
+  <p>Depois, mais três problemas até conseguir trabalhar:</p>
+  <ul class="plain">
+    <li>As capturas saíam pretas. A decodificação de vídeo por hardware desenhava fora do alcance da captura. Com decodificação por software, a imagem apareceu.</li>
+    <li>O teclado traduzia errado:</li>
+  </ul>
+  <div class="term">digitado: powershell<br>chegou:   <span class="bad">rowershepp</span></div>
+  <ul class="plain">
+    <li>O <code>xdotool</code> escolhia teclas de outro layout. O agente passou a mandar códigos físicos de tecla. Ainda assim a barra <code>/</code> chegava como <code>\</code>; passou a ir por AltGr+Q.</li>
+    <li>Num app WPF, o clique só selecionava um item da lista se o botão ficasse pressionado uns 150 ms.</li>
+  </ul>
+</li>
+
+<li>
+  <div class="when">23 de outubro · 08:30</div>
+  <h3>Instalando sem senha de administrador</h3>
+  <p>.NET 6 só para o usuário, Blender 3.6 portátil e Sims4Studio, cada um baixado e descompactado pelo PowerShell remoto. Os arquivos do Linux iam por um pequeno servidor HTTP aberto só na rede privada.</p>
+</li>
+
+<li>
+  <div class="when">23 de outubro · 08:37 a 09:04</div>
+  <h3>A placa</h3>
+  <p>No Sims4Studio, o agente clonou uns óculos do jogo e exportou a malha. Um script no Blender, rodando sem interface, trocou os óculos por uma placa plana de 22 × 28 cm, presa ao osso da cabeça. O Sims4Studio recusou a primeira versão (malha vazia) e a segunda (faltava mapa de UV). A terceira entrou nos quatro níveis de detalhe.</p>
+  <figure><img src="img/s4s-amarela.jpg" alt="Sims4Studio mostrando a modelo com uma placa amarela sorridente no rosto" loading="lazy"><figcaption>A primeira prévia, com uma carinha provisória.</figcaption></figure>
+  <p>Descoberta no caminho: o jogo pinta todas as peças do Sim numa textura única de 1024 × 2048. A foto precisa caber no retângulo onde ficariam os óculos, 256 × 128 pixels. Por isso ela aparece esticada e de baixa resolução, o que combina com o efeito tosco.</p>
+  <figure><img src="img/atlas.jpg" alt="Parte de cima da textura do Sim: transparente, com a foto num pequeno retângulo" loading="lazy"><figcaption>A textura que vai para o jogo. Tudo transparente, menos o retângulo vermelho.</figcaption></figure>
+</li>
+
+<li>
+  <div class="when">23 de outubro · 09:18 a 09:45</div>
+  <h3>Primeiro teste no jogo</h3>
+  <p>A Steam baixou uma atualização, e o jogo atualizado desligou os mods sozinho. O agente religou nas opções e reiniciou. Enquanto o jogo carregava, escreveu um codificador para o formato de textura que o jogo usa (RLE2), portado do código de uma ferramenta antiga da comunidade. O teste confere que ele produz os mesmos bytes que o Sims4Studio.</p>
+  <div class="duo">
+    <figure><img src="img/cas-teste.jpg" alt="Criar um Sim com a placa de teste azul e vermelha no rosto" loading="lazy"><figcaption>A placa no editor de Sims. A imagem de teste marca o topo e a esquerda, para conferir a orientação.</figcaption></figure>
+    <figure><img src="img/assign-teste.jpg" alt="Modo ao vivo com a placa aplicada pelo console" loading="lazy"><figcaption>No modo ao vivo, pelo comando de console <code>photofacemod.assign</code>.</figcaption></figure>
+  </div>
+</li>
+
+<li>
+  <div class="when">23 de outubro · 09:54 a 10:08</div>
+  <h3>Dois bugs que só apareceram no jogo</h3>
+  <p>O log de exceções do jogo mostrou que o gancho de carregamento usava um módulo que não existe (<code>zone_spin_up</code>). Os comandos funcionavam porque eram registrados antes do erro. O agente trocou o gancho pelo que a comunidade usa.</p>
+  <p>Na imagem de perto, o nariz da Sim atravessava a placa. A placa foi para 4 cm à frente do rosto.</p>
+  <div class="duo">
+    <figure><img src="img/retrato-teste.jpg" alt="Retrato da Sim com a placa de teste, sem o nariz atravessando" loading="lazy"><figcaption>Depois do ajuste.</figcaption></figure>
+    <figure><img src="img/persistiu.jpg" alt="A Sim com a placa depois de carregar o save" loading="lazy"><figcaption>Salvar, fechar, abrir de novo: a foto continua no Sim, e o log fica vazio.</figcaption></figure>
+  </div>
+</li>
+
+<li>
+  <div class="when">23 de outubro · 11:33</div>
+  <h3>Escolhendo a cara</h3>
+  <p>Para a demonstração, o agente desenhou seis rostos a canetão sobre papelão, por código, e simulou como cada um ficaria depois de espremido em 256 × 128.</p>
+  <figure><img src="img/caras-papelao.jpg" alt="Seis rostos desenhados sobre papelão, de A a F" loading="lazy"></figure>
+  <figure><img src="img/caras-no-jogo.jpg" alt="Os seis rostos como ficam depois de comprimidos para o jogo" loading="lazy"><figcaption>A mesma folha, simulando a resolução do jogo.</figcaption></figure>
+  <p>O escolhido foi o D, de óculos escuros.</p>
+</li>
+
+<li>
+  <div class="when">23 de outubro · 11:42</div>
+  <h3>Resultado</h3>
+  <figure><img src="img/oculos-frente.jpg" alt="A Sim em pé na calçada com a cara de papelão de óculos escuros" loading="lazy"></figure>
+  <div class="duo">
+    <figure><img src="img/oculos-lado.jpg" alt="Vista lateral da placa" loading="lazy"><figcaption>De lado dá para ver que é uma placa plana.</figcaption></figure>
+    <figure><img src="img/s4s-papelao.jpg" alt="A mesma cara no Sims4Studio" loading="lazy"><figcaption>A mesma textura no Sims4Studio.</figcaption></figure>
+  </div>
+</li>
+
+</ol>
+
+<h2>Quem fez o quê</h2>
+<table>
+  <thead><tr><th>Quando</th><th>Agente</th><th>Trabalho</th></tr></thead>
+  <tbody>
+    <tr><td>Julho</td><td>Claude, num terminal Linux (modelo e esforço não ficaram registrados)</td><td>Pesquisa, arquitetura, código, testes, documentação, release alfa, tentativa com Wine</td></tr>
+    <tr><td>Outubro</td><td>Um agente coordenador, acionado por voz</td><td>Reabriu a tarefa e subiu o agente de trabalho</td></tr>
+    <tr><td>Outubro</td><td>Claude Opus 5.5, esforço médio</td><td>CI, controle do Windows, placa 3D, codificador de textura, correções, testes no jogo, esta página</td></tr>
+  </tbody>
+</table>
+<p>O dono do projeto fez o pedido, comprou o jogo em julho, digitou o PIN do Moonlight três vezes, autorizou o merge dos pull requests e escolheu a cara D.</p>
+
+<h2>Como o agente operava o Windows</h2>
+<p>Num ciclo: tirar uma captura da janela do Moonlight, ler a imagem, decidir, mandar clique ou tecla por <code>xdotool</code>, capturar de novo.</p>
+<div class="term">w.sh shot          <span class="ok"># captura a janela e normaliza para 1920×1080</span><br>w.sh click 1433 480<br>w.sh type 'C:\Users\...\photoface_quad.blend'<br>w.sh key Return</div>
+<p>Quando o jogo demorava a carregar, o agente programava enquanto esperava: o codificador de textura e a nova ferramenta de fotos foram escritos durante as telas de carregamento.</p>
+
+<h2>O código</h2>
+<p>Tudo neste repositório: o script do jogo, a ferramenta que converte fotos, o script do Blender, os testes e a documentação técnica.</p>
+<a class="cta" href="https://github.com/rpagliuca/sims4-photo-face-mod">Ver no GitHub</a>
+<a class="cta" href="../index.html">Documentação técnica</a>
+
+<footer>
+  Página escrita pelo mesmo agente que fez o mod. The Sims é marca da Electronic Arts; este é um projeto de fã, sem relação com a EA.
+</footer>
+
+</main>
+</body>
+</html>
