@@ -210,44 +210,28 @@ cd -</code></pre>
     runtime para resolver o comando <code>photofacemod.assign &lt;photo_key&gt;</code>. Rodar o comando de novo
     para outro Sim/foto <strong>acrescenta</strong> ao mesmo <code>--output</code> em vez de sobrescrever (o arquivo já
     existente vira a base, não o template puro), então um único <code>.package</code> acumula todos os Sims.
-    <code>packages/casp_template/base.package</code> ainda não existe no repositório (ver
-    seção seguinte) — para desenvolvimento/testes, a companion tool usa um template sintético gerado em
-    memória (<code>companion/src/syntheticTemplate.js</code>), sem precisar do arquivo real. Detalhes e
-    exemplos completos em <code>companion/README.md</code>.
+    O template real é <code>packages/casp_template/base.package</code> (ver seção seguinte); os testes
+    automatizados também usam um template sintético gerado em memória
+    (<code>companion/src/syntheticTemplate.js</code>). Detalhes e exemplos completos em
+    <code>companion/README.md</code>.
   </p>
 
-  <h2 id="casp-automacao">O CASP template e a automação via Wine</h2>
+  <h2 id="casp-automacao">O CASP template</h2>
   <p>
-    O acessório CAS base (<code>packages/casp_template/</code>) é criado no <strong>Sims4Studio</strong>, uma
-    ferramenta GUI em .NET sem CLI oficial. Isso é, por natureza, difícil de automatizar de forma 100%
-    confiável em CI. Duas vias documentadas:
+    O acessório CAS base (<code>packages/casp_template/base.package</code>) foi criado no
+    <strong>Sims4Studio</strong>, que é só GUI, num Windows com o jogo instalado. A malha plana sai de um
+    script do Blender (<code>packages/casp_template/flat_quad.py</code>) que roda sem interface sobre a malha
+    exportada de uns óculos. O passo a passo completo está em <code>packages/casp_template/README.md</code>.
   </p>
-  <h3>Via 1 — automação experimental via Wine (CI)</h3>
   <p>
-    O pipeline de CI tenta rodar o Sims4Studio sob <strong>Wine + .NET 6 Desktop Runtime</strong> em Linux,
-    disparando a geração/validação do template de forma headless. Isso é tratado como
-    <strong>best-effort</strong>: GUIs .NET sob Wine são notoriamente frágeis (diálogos modais inesperados,
-    dependências de runtime que mudam entre versões do Wine, timing de inicialização). Se essa automação
-    quebrar, ela não deve bloquear o build dos outros artefatos — apenas sinalizar que o template pode estar
-    desatualizado.
+    A foto ocupa o retângulo <strong>x 512..768, y 128..256</strong> do atlas de 1024 x 2048 que o jogo compõe
+    para cada Sim (a região dos óculos); o resto da textura é transparente.
   </p>
-  <h3>Via 2 — passo manual do mantenedor (fallback confiável)</h3>
   <p>
-    Quando a automação não for confiável, o mantenedor gera/atualiza o template manualmente:
+    Esse passo é raro: só se repete se a "plaquinha" mudar. O fluxo do dia a dia (uma foto nova por Sim) nunca
+    toca o Sims4Studio; passa só pela companion tool.
   </p>
-  <ol>
-    <li>Abrir o Sims4Studio no Windows (ou Wine local, fora do CI, com controle manual).</li>
-    <li>Criar/editar o acessório de cabeça base seguindo a especificação em
-      <a href="base-de-conhecimento.html#casp-template">Base de Conhecimento</a> (slot de cabeça, sem
-      restrição de idade/gênero desnecessária, malha plana do tamanho de uma foto 4:3).</li>
-    <li>Exportar o <code>.package</code> resultante e substituir/commitar em
-      <code>packages/casp_template/</code>.</li>
-  </ol>
-  <p>
-    Esse passo é raro — só precisa se repetir se o template em si precisar mudar (ex.: ajustar o tamanho da
-    "plaquinha", trocar o slot de equipamento). O fluxo do dia a dia (uma foto nova por jogador) nunca toca o
-    Sims4Studio; passa só pela companion tool.
-  </p>
+  <p><img src="img-s4s-preview-placeholder.png" alt="Prévia no Sims4Studio: a placa com a carinha amarela no rosto do Sim" style="max-width:100%"></p>
 
   <h2>Notas de build cross-platform</h2>
   <ul>
