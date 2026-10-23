@@ -2,52 +2,27 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const os = require("node:os");
 const path = require("node:path");
 
-const { loadManifest, saveManifest, allocateSwatchIndex } = require("../../companion/src/manifest");
+const { loadManifest, saveManifest, generatedInstances, formatInstance } = require("../../companion/src/manifest");
+const { makeTmpDir } = require("./helpers");
 
-function makeTmpDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "photoface-manifest-test-"));
-}
-
-test("loadManifest returns {} when the file doesn't exist yet", () => {
-  const dir = makeTmpDir();
-  const manifest = loadManifest(path.join(dir, "does-not-exist.json"));
-  assert.deepEqual(manifest, {});
-  fs.rmSync(dir, { recursive: true, force: true });
+test("loadManifest returns {} when the file doesn't exist yet", (t) => {
+  assert.deepEqual(loadManifest(path.join(makeTmpDir(t), "does-not-exist.json")), {});
 });
 
-test("saveManifest + loadManifest round-trip, creating parent directories", () => {
-  const dir = makeTmpDir();
-  const manifestPath = path.join(dir, "nested", "photo_manifest.json");
-
-  saveManifest(manifestPath, { rafael: 0, irmao: 1 });
-  assert.deepEqual(loadManifest(manifestPath), { rafael: 0, irmao: 1 });
-
-  fs.rmSync(dir, { recursive: true, force: true });
+test("saveManifest + loadManifest round-trip, creating parent directories", (t) => {
+  const manifestPath = path.join(makeTmpDir(t), "nested", "photo_manifest.json");
+  const manifest = { rafael: "0x8000000000000001", irmao: "0x8000000000000002" };
+  saveManifest(manifestPath, manifest);
+  assert.deepEqual(loadManifest(manifestPath), manifest);
 });
 
-test("allocateSwatchIndex assigns the first free index for a new photo_key", () => {
-  const { manifest, swatchIndex } = allocateSwatchIndex({ rafael: 0 }, "irmao", 4);
-  assert.equal(swatchIndex, 1);
-  assert.deepEqual(manifest, { rafael: 0, irmao: 1 });
+test("formatInstance writes 16 uppercase hex digits with 0x", () => {
+  assert.equal(formatInstance(0xabcn), "0x0000000000000ABC");
 });
 
-test("allocateSwatchIndex reuses the existing index for an already-known photo_key", () => {
-  const existing = { rafael: 0, irmao: 1 };
-  const { manifest, swatchIndex } = allocateSwatchIndex(existing, "rafael", 4);
-  assert.equal(swatchIndex, 0);
-  assert.equal(manifest, existing, "should return the same manifest reference, unmodified");
-});
-
-test("allocateSwatchIndex fills gaps left by previously-freed indices", () => {
-  const { swatchIndex } = allocateSwatchIndex({ a: 0, c: 2 }, "b", 4);
-  assert.equal(swatchIndex, 1);
-});
-
-test("allocateSwatchIndex throws a clear error when all swatches are taken", () => {
-  const full = { a: 0, b: 1 };
-  assert.throws(() => allocateSwatchIndex(full, "c", 2), /No free swatch index/);
+test("generatedInstances parses the manifest values back to bigint", () => {
+  const set = generatedInstances({ a: "0x8000000000000001", b: "0x00000000000000FF" });
+  assert.deepEqual([...set], [0x8000000000000001n, 0xffn]);
 });

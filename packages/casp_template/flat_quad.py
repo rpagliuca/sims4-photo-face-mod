@@ -52,7 +52,7 @@ mx = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)
 print('bbox oculos', tuple(mn), tuple(mx))
 cx, cz = (mn.x + mx.x) / 2, (mn.z + mx.z) / 2
 # frente do Sim = -Y no Blender (o S4S gira -90 graus em X ao gravar)
-y = mn.y - 0.01
+y = mn.y - 0.04  # 4 cm à frente dos óculos: com 1 cm o nariz atravessava a placa
 W, H = 0.22, 0.28  # tamanho aproximado de um rosto adulto, em metros
 cz -= 0.03         # óculos ficam na altura dos olhos; o centro do rosto é um pouco abaixo
 for extra in meshes[1:]:
@@ -78,7 +78,9 @@ if (mw.to_3x3() @ face.normal).y > 0:
 # O jogo compõe todas as peças do Sim num atlas 1024x2048; a região dos óculos é
 # x 512..768, y 128..256 (uv_0: u 0.5..0.75, v 0.875..0.9375). A foto vai nesse retângulo.
 # uv_1 recebe a faixa original dos óculos.
-UV_RECT = {'uv_0': (0.5, 0.75, 0.875, 0.9375), 'uv_1': (-0.867, 0.867, 0.867, 0.955)}
+# 2 px para dentro do retângulo: na borda o filtro de textura puxava a vizinhança do atlas
+IN_U, IN_V = 2 / 1024, 2 / 2048
+UV_RECT = {'uv_0': (0.5 + IN_U, 0.75 - IN_U, 0.875 + IN_V, 0.9375 - IN_V), 'uv_1': (-0.867, 0.867, 0.867, 0.955)}
 for name, layer in bm.loops.layers.uv.items():
     u0, u1, v0, v1 = UV_RECT.get(name, (0, 1, 0, 1))
     for loop in face.loops:

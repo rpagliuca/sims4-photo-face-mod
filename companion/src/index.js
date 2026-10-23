@@ -4,36 +4,30 @@
 const fs = require("node:fs");
 const { parseArgs } = require("node:util");
 
-const { formatResourceKey } = require("@s4tk/hashing/formatting");
-
 const {
   loadTemplatePackage,
-  countSwatches,
   resolveBasePackagePath,
-  assignPhotoToPackage,
+  addPhotoCasp,
   writePackage,
 } = require("./packageBuilder");
-const { loadManifest, saveManifest, allocateSwatchIndex } = require("./manifest");
+const { loadManifest, saveManifest, generatedInstances, formatInstance } = require("./manifest");
 
 const USAGE = `Usage:
-  sims4-photo-face assign --photo <file.png> --photo-key <key> --manifest <photo_manifest.json> --template <template.package> --output <output.package> [--sim-name <name>] [--swatch-index <N>]
+  sims4-photo-face assign --photo <file.png> --photo-key <key> --manifest <photo_manifest.json> --template <base.package> --output <output.package> [--sim-name <name>]
 
 Options:
   --photo         Path to the user's PNG photo.
-  --photo-key     Readable key the Python mod looks up at runtime (e.g. the
+  --photo-key     Readable key the Python mod looks up at runtime (the
                    argument to "photofacemod.assign <photo_key>"). Re-running
-                   with the same --photo-key reuses its existing swatch.
-  --manifest      Path to photo_manifest.json (photo_key -> swatch_index),
+                   with the same --photo-key replaces that photo.
+  --manifest      Path to photo_manifest.json (photo_key -> CASP instance),
                    read by the Python mod's PhotoManifest. Created if missing.
-  --template      Path to the CAS Part template .package (with N pre-made
-                   swatches) to clone on the very first run.
+  --template      Path to packages/casp_template/base.package, cloned on the
+                   very first run.
   --output        Path to write the resulting .package to. If this file
                    already exists, it is used as the base instead of
-                   --template, so multiple Sims accumulate into one file.
-  --sim-name      Optional label for logging only (not embedded in the
-                   package; does not affect which resource is overwritten).
-  --swatch-index  Optional advanced override: force a specific swatch index
-                   instead of letting the manifest allocate/reuse one.
+                   --template, so multiple photos accumulate into one file.
+  --sim-name      Optional label for logging only.
   --help          Show this message.
 `;
 
@@ -50,7 +44,6 @@ function parseCliArgs(argv) {
       photo: { type: "string" },
       "photo-key": { type: "string" },
       manifest: { type: "string" },
-      "swatch-index": { type: "string" },
       "sim-name": { type: "string" },
       template: { type: "string" },
       output: { type: "string" },
@@ -62,23 +55,13 @@ function parseCliArgs(argv) {
 }
 
 /**
- * Runs the `assign` command:
- *  1. loads (or creates) the accumulated output package - or the template on
- *     the first run for this --output;
- *  2. loads (or creates) the photo_manifest.json;
- *  3. resolves photo_key -> swatch_index (reusing an existing mapping, or
- *     allocating the next free one; or honoring an explicit --swatch-index
- *     override);
- *  4. writes the photo into that swatch and saves both the .package and the
- *     manifest.
+ * Runs the `assign` command: clones the template CASP for this photo (a new
+ * CASP + RLE2 texture, both with instances derived from the photo_key), adds
+ * them to the accumulated output package and records photo_key -> CASP
+ * instance in the manifest.
  *
- * `--sim-name` is accepted but only used for the log message - it does not
- * influence which resource gets overwritten (that's `--photo-key` via the
- * manifest), since per-Sim resource collisions are exactly what this design
- * must avoid.
- *
- * @param {{photo: string, "photo-key": string, manifest: string, template: string, output: string, "sim-name"?: string, "swatch-index"?: string}} options
- * @returns {Promise<{ outputPath: string, textureKey: import("@s4tk/models").ResourceKey, swatchIndex: number, manifestPath: string }>}
+ * @param {{photo: string, "photo-key": string, manifest: string, template: string, output: string, "sim-name"?: string}} options
+ * @returns {Promise<{ outputPath: string, caspInstance: bigint, textureInstance: bigint, manifestPath: string }>}
  */
 async function runAssign(options) {
   const missing = ["photo", "photo-key", "manifest", "template", "output"].filter((key) => !options[key]);
@@ -87,31 +70,19 @@ async function runAssign(options) {
   }
 
   const photoKey = options["photo-key"];
-  const basePath = resolveBasePackagePath({ templatePath: options.template, outputPath: options.output });
-  const pkg = loadTemplatePackage(basePath);
-  const swatchCount = countSwatches(pkg);
+  const pkg = loadTemplatePackage(resolveBasePackagePath({ templatePath: options.template, outputPath: options.output }));
+  const manifest = loadManifest(options.manifest);
 
-  const existingManifest = loadManifest(options.manifest);
-
-  let manifest;
-  let swatchIndex;
-
-  if (options["swatch-index"] !== undefined) {
-    swatchIndex = Number(options["swatch-index"]);
-    if (!Number.isInteger(swatchIndex) || swatchIndex < 0) {
-      throw new Error(`--swatch-index must be a non-negative integer, got: "${options["swatch-index"]}"\n\n${USAGE}`);
-    }
-    manifest = { ...existingManifest, [photoKey]: swatchIndex };
-  } else {
-    ({ manifest, swatchIndex } = allocateSwatchIndex(existingManifest, photoKey, swatchCount));
-  }
-
-  const pngBuffer = fs.readFileSync(options.photo);
-  const { textureKey } = await assignPhotoToPackage(pkg, pngBuffer, swatchIndex);
+  const { caspInstance, textureInstance } = await addPhotoCasp(
+    pkg,
+    photoKey,
+    fs.readFileSync(options.photo),
+    generatedInstances(manifest)
+  );
   writePackage(pkg, options.output);
-  saveManifest(options.manifest, manifest);
+  saveManifest(options.manifest, { ...manifest, [photoKey]: formatInstance(caspInstance) });
 
-  return { outputPath: options.output, textureKey, swatchIndex, manifestPath: options.manifest };
+  return { outputPath: options.output, caspInstance, textureInstance, manifestPath: options.manifest };
 }
 
 /**
@@ -132,15 +103,14 @@ async function main(argv) {
     throw new Error(`Unknown command "${command}".\n\n${USAGE}`);
   }
 
-  const { outputPath, textureKey, swatchIndex, manifestPath } = await runAssign(options);
+  const { outputPath, caspInstance, manifestPath } = await runAssign(options);
   const label = options["sim-name"]
     ? `Sim "${options["sim-name"]}" (photo_key "${options["photo-key"]}")`
     : `photo_key "${options["photo-key"]}"`;
   process.stdout.write(
-    `Assigned photo for ${label} -> swatch ${swatchIndex}\n` +
+    `Assigned photo for ${label} -> CASP ${formatInstance(caspInstance)}\n` +
       `Package: ${outputPath}\n` +
-      `Manifest: ${manifestPath}\n` +
-      `Texture resource key: ${formatResourceKey(textureKey)}\n`
+      `Manifest: ${manifestPath}\n`
   );
 }
 

@@ -1,5 +1,6 @@
 """Installs lightweight fakes for The Sims 4's game-only modules
-(`sims4`, `services`, `server_commands.argument_helpers`, `zone_spin_up`)
+(`sims4`, `services`, `server_commands.argument_helpers`, `zone_spin_up`,
+`protocolbuffers`, `cas.cas`)
 into sys.modules before any test imports photo_face_mod.ts4_integration or
 photo_face_mod.hooks. The real game API is not decompiled/available here;
 these fakes model the commonly documented shape of that API so the
@@ -85,8 +86,32 @@ def _build_fake_zone_spin_up():
     sys.modules["zone_spin_up"] = zone_spin_up
 
 
+def _build_fake_protobuffers_and_cas():
+    protocolbuffers = types.ModuleType("protocolbuffers")
+    s4common = types.ModuleType("protocolbuffers.S4Common_pb2")
+    outfits = types.ModuleType("protocolbuffers.Outfits_pb2")
+    from fakes import FakeBodyTypesList, FakeIdList
+
+    s4common.IdList = FakeIdList
+    outfits.BodyTypesList = FakeBodyTypesList
+    protocolbuffers.S4Common_pb2 = s4common
+    protocolbuffers.Outfits_pb2 = outfits
+    sys.modules["protocolbuffers"] = protocolbuffers
+    sys.modules["protocolbuffers.S4Common_pb2"] = s4common
+    sys.modules["protocolbuffers.Outfits_pb2"] = outfits
+
+    cas_pkg = types.ModuleType("cas")
+    cas_mod = types.ModuleType("cas.cas")
+    cas_mod.GLASSES = 11
+    cas_mod.get_caspart_bodytype = lambda cas_part_id: cas_mod.GLASSES
+    cas_pkg.cas = cas_mod
+    sys.modules["cas"] = cas_pkg
+    sys.modules["cas.cas"] = cas_mod
+
+
 _build_fake_sims4()
 _build_fake_services()
+_build_fake_protobuffers_and_cas()
 _build_fake_argument_helpers()
 _build_fake_zone_spin_up()
 

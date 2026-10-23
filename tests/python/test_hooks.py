@@ -31,4 +31,4 @@ def test_installed_hook_applies_photos_to_all_sims(tmp_path, monkeypatch):
     hooks.install()
     zone_spin_up.ZoneSpinUp().load()
 
-    assert sim.sim_info.set_outfit_data_calls
+    assert sim.sim_info.resend_count == 1

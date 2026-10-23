@@ -1,42 +1,69 @@
 """Shared fake game objects (FakeSim/FakeSimInfo) used by both conftest.py
 (fixtures) and test modules that need to build several fake Sims by hand.
+
+FakeSimInfo models the outfit API the mod uses (the same one S4CL uses):
+save_outfits() returns a protobuf-like message whose outfits carry parallel
+lists of part ids and body types; the mod writes it back to _base.outfits
+and calls resend_outfits().
 """
 
 
-class FakeOutfitData:
-    def __init__(self, parts=None):
-        self._parts = list(parts or [])
+class FakeIdList:
+    def __init__(self, ids=None):
+        self.ids = list(ids or [])
 
-    def get_outfit_parts(self):
-        return list(self._parts)
+
+class FakeBodyTypesList:
+    def __init__(self, body_types=None):
+        self.body_types = list(body_types or [])
+
+
+class FakeSavedOutfit:
+    def __init__(self, category, pairs):
+        self.category = category
+        self.parts = FakeIdList(p for p, _ in pairs)
+        self.body_types_list = FakeBodyTypesList(b for _, b in pairs)
+
+
+class FakeSavedOutfits:
+    def __init__(self, outfits):
+        self.outfits = outfits
+
+    def SerializeToString(self):
+        return self
+
+
+class FakeBase:
+    outfits = None
+    outfit_type_and_index = None
 
 
 class FakeSimInfo:
-    def __init__(self, sim_id, outfit_parts=None):
+    def __init__(self, sim_id, outfits=None):
         self.sim_id = sim_id
-        self._outfit = ("Everyday", 0)
-        self._outfit_data = FakeOutfitData(outfit_parts)
-        self.set_outfit_data_calls = []
-        self.appearance_refreshed = 0
+        # two outfits (everyday, sleep), each with a body part and real glasses
+        self._outfits = outfits or [
+            [(1001, 6), (2001, 11)],
+            [(1002, 6)],
+        ]
+        self._base = FakeBase()
+        self.resend_count = 0
+
+    def save_outfits(self):
+        return FakeSavedOutfits([FakeSavedOutfit(i, pairs) for i, pairs in enumerate(self._outfits)])
 
     def get_current_outfit(self):
-        return self._outfit
+        return (0, 0)
 
-    def get_outfit(self, category, index):
-        return self._outfit_data
+    def resend_outfits(self):
+        saved = self._base.outfits
+        self._outfits = [list(zip(o.parts.ids, o.body_types_list.body_types)) for o in saved.outfits]
+        self.resend_count += 1
 
-    def set_outfit_data(self, outfit_category_and_index, parts, swatch_index):
-        self.set_outfit_data_calls.append((outfit_category_and_index, list(parts), swatch_index))
-        self._outfit_data = FakeOutfitData(parts)
-
-    @property
-    def appearance_tracker(self):
-        return self
-
-    def reset_appearance_modifiers(self):
-        self.appearance_refreshed += 1
+    def outfit_parts(self):
+        return [[part for part, _ in pairs] for pairs in self._outfits]
 
 
 class FakeSim:
-    def __init__(self, sim_id, outfit_parts=None):
-        self.sim_info = FakeSimInfo(sim_id, outfit_parts=outfit_parts)
+    def __init__(self, sim_id, outfits=None):
+        self.sim_info = FakeSimInfo(sim_id, outfits=outfits)

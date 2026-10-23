@@ -3,67 +3,29 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const { Package } = require("@s4tk/models");
-const { BinaryResourceType } = require("@s4tk/models/enums");
+const { Package, RawResource } = require("@s4tk/models");
 
-const { pngBufferToTextureResource } = require("./texture");
+const { deriveInstanceId } = require("./resourceKeys");
+const { RLE2_RESOURCE_TYPE } = require("./rle2");
+const { photoToTextureResource } = require("./texture");
+
+const CASP_RESOURCE_TYPE = 0x034aeecb;
 
 /**
  * Reads a .package file from disk and parses it as a DBPF Package.
  *
- * @param {string} templatePath Path to the template .package file.
+ * @param {string} packagePath
  * @returns {import("@s4tk/models").Package}
  */
-function loadTemplatePackage(templatePath) {
-  const buffer = fs.readFileSync(templatePath);
-  return Package.from(buffer);
-}
-
-/**
- * Returns every DstImage (shuffled DDS) resource entry in the template,
- * i.e. one per CAS swatch, in a deterministic order (sorted by group then
- * instance - NOT file/physical order, which S4TK/DBPF does not guarantee is
- * stable across re-saves).
- *
- * This ordering is a fallback: the robust way to map a swatch_index to a
- * resource key is an explicit manifest emitted by whatever builds
- * base.package (TODO: have the Sims4Studio/Wine template build also emit a
- * template_manifest.json with `swatch_index -> {type, group, instance}`,
- * see packages/casp_template/README.md). Until that exists, "swatch N is the
- * N-th DstImage resource by sorted key" is what we've got, and it is stable
- * as long as the template itself isn't regenerated with swatches reordered.
- *
- * @param {import("@s4tk/models").Package} pkg
- * @returns {import("@s4tk/models").ResourceEntry[]}
- */
-function listTextureEntriesSorted(pkg) {
-  return pkg.entries
-    .filter((e) => e.key.type === BinaryResourceType.DstImage)
-    .sort((a, b) => {
-      if (a.key.group !== b.key.group) return a.key.group - b.key.group;
-      if (a.key.instance < b.key.instance) return -1;
-      if (a.key.instance > b.key.instance) return 1;
-      return 0;
-    });
-}
-
-/**
- * Number of swatches (DstImage resources) available in a package - used to
- * size the photo_manifest.json index allocation (see manifest.js).
- *
- * @param {import("@s4tk/models").Package} pkg
- * @returns {number}
- */
-function countSwatches(pkg) {
-  return listTextureEntriesSorted(pkg).length;
+function loadTemplatePackage(packagePath) {
+  return Package.from(fs.readFileSync(packagePath));
 }
 
 /**
  * Decides which .package file a companion run should build on top of: the
  * previously-accumulated --output file if one already exists (so a second
- * Sim's photo gets added to the same package instead of starting fresh from
- * the template), or the template itself on the very first run for a given
- * output path.
+ * Sim's photo is added to the same package instead of starting fresh from
+ * the template), or the template itself on the first run.
  *
  * @param {object} args
  * @param {string} args.templatePath
@@ -75,68 +37,88 @@ function resolveBasePackagePath({ templatePath, outputPath }) {
 }
 
 /**
- * Finds the CAS Part texture resource entry (a shuffled DST image) for a
- * specific swatch index inside a template package. This is the resource
- * slot the game reads when rendering that swatch's thumbnail and in-world
- * texture. The swatch_index itself is decided upstream by the Python mod's
- * PhotoAssignmentStore, not by this tool.
+ * The TGI list of a CASP resource: `offset` is where the list starts
+ * (count byte), each entry is instance (u64), group (u32), type (u32).
+ * The header's second u32 is the list offset, relative to byte 8.
  *
- * @param {import("@s4tk/models").Package} pkg
- * @param {number} swatchIndex Zero-based swatch index.
- * @returns {import("@s4tk/models").ResourceEntry}
+ * @param {Buffer} casp
+ * @returns {{instance: bigint, group: number, type: number, at: number}[]}
  */
-function findTextureEntryForSwatch(pkg, swatchIndex) {
-  if (!Number.isInteger(swatchIndex) || swatchIndex < 0) {
-    throw new Error(`swatchIndex must be a non-negative integer, got: ${swatchIndex}`);
+function readCaspTgis(casp) {
+  const start = casp.readUInt32LE(4) + 8;
+  const count = casp[start];
+  const tgis = [];
+  for (let i = 0; i < count; i++) {
+    const at = start + 1 + i * 16;
+    tgis.push({
+      instance: casp.readBigUInt64LE(at),
+      group: casp.readUInt32LE(at + 8),
+      type: casp.readUInt32LE(at + 12),
+      at,
+    });
   }
-
-  const entries = listTextureEntriesSorted(pkg);
-
-  if (entries.length === 0) {
-    throw new Error(
-      "Template package has no DstImage (shuffled DDS) resources to use as " +
-        "photo texture slots. If you passed packages/casp_template/base.package, " +
-        "note that file is a known TODO of this project (built separately via " +
-        "Sims4Studio/Wine) and may not exist yet - use " +
-        "src/syntheticTemplate.js to generate a placeholder template for " +
-        "development and tests."
-    );
-  }
-
-  const entry = entries[swatchIndex];
-
-  if (!entry) {
-    throw new Error(
-      `Template only has ${entries.length} swatch texture(s) (DstImage ` +
-        `resources), but swatchIndex ${swatchIndex} was requested. Either the ` +
-        "caller (PhotoAssignmentStore) is out of sync with this template, or " +
-        "the template needs more swatches created in Sims4Studio."
-    );
-  }
-
-  return entry;
+  return tgis;
 }
 
 /**
- * Replaces one swatch's texture resource in a template package with one
- * generated from the given photo, in place. The resource's original TGI key
- * (type/group/instance) is preserved on purpose: the CASP resource's
- * internal references point at that exact key (Sims4Studio wires this up
- * when the swatch is created), and we have no CASP-binary parser to rewrite
- * those references ourselves, so keeping the key stable is what makes the
- * accessory still resolve to the new texture in-game. Different Sims using
- * different swatch_index values overwrite different resource keys, so their
- * output packages coexist without clobbering each other.
+ * The template's CASP: the CASP whose diffuse (RLE2) texture lives in the
+ * same package. Photo CASPs generated by this tool reference textures in the
+ * package too, so the template is told apart as the one NOT listed in the
+ * manifest of generated parts.
  *
- * @param {import("@s4tk/models").Package} pkg Template package (mutated).
- * @param {Buffer} pngBuffer Raw PNG bytes of the user's photo.
- * @param {number} swatchIndex Zero-based swatch index (decided by the Python mod).
- * @returns {Promise<{ pkg: import("@s4tk/models").Package, textureKey: import("@s4tk/models").ResourceKey }>}
+ * @param {import("@s4tk/models").Package} pkg
+ * @param {Set<bigint>} [generated] Instances of CASPs this tool generated.
+ * @returns {import("@s4tk/models").ResourceKeyPair}
  */
-async function assignPhotoToPackage(pkg, pngBuffer, swatchIndex) {
-  const entry = findTextureEntryForSwatch(pkg, swatchIndex);
-  entry.value = await pngBufferToTextureResource(pngBuffer);
-  return { pkg, textureKey: entry.key };
+function findTemplateCasp(pkg, generated = new Set()) {
+  const casps = pkg.entries.filter(
+    (e) => e.key.type === CASP_RESOURCE_TYPE && !generated.has(e.key.instance)
+  );
+  if (casps.length !== 1) {
+    throw new Error(
+      `Esperava exatamente 1 CASP template no pacote, achei ${casps.length}. ` +
+        "Use packages/casp_template/base.package como --template."
+    );
+  }
+  return casps[0];
+}
+
+/**
+ * Clones the template CASP for one photo: a new CASP instance whose diffuse
+ * TGI points at a new RLE2 texture made from the photo. Everything else
+ * (meshes, region map) is shared with the template. Re-running for the same
+ * photo_key overwrites that photo's CASP and texture in place, since both
+ * instances are derived from the key.
+ *
+ * @param {import("@s4tk/models").Package} pkg Package to add to (mutated).
+ * @param {string} photoKey
+ * @param {Buffer} pngBuffer Raw PNG bytes of the photo.
+ * @param {Set<bigint>} [generated] CASP instances already generated (from the manifest).
+ * @returns {Promise<{ caspInstance: bigint, textureInstance: bigint }>}
+ */
+async function addPhotoCasp(pkg, photoKey, pngBuffer, generated = new Set()) {
+  const template = findTemplateCasp(pkg, generated);
+  const caspBuffer = Buffer.from(template.value.getBuffer());
+  const diffuse = readCaspTgis(caspBuffer).find((t) => t.type === RLE2_RESOURCE_TYPE);
+  if (!diffuse) throw new Error("O CASP template não referencia nenhuma textura RLE2");
+
+  const caspInstance = deriveInstanceId(photoKey, "casp");
+  const textureInstance = deriveInstanceId(photoKey, "texture");
+  caspBuffer.writeBigUInt64LE(textureInstance, diffuse.at);
+
+  const textureKey = { type: RLE2_RESOURCE_TYPE, group: diffuse.group, instance: textureInstance };
+  const caspKey = { type: CASP_RESOURCE_TYPE, group: template.key.group, instance: caspInstance };
+  upsert(pkg, textureKey, await photoToTextureResource(pngBuffer));
+  upsert(pkg, caspKey, RawResource.from(caspBuffer));
+  return { caspInstance, textureInstance };
+}
+
+function upsert(pkg, key, value) {
+  const existing = pkg.entries.find(
+    (e) => e.key.type === key.type && e.key.group === key.group && e.key.instance === key.instance
+  );
+  if (existing) existing.value = value;
+  else pkg.add(key, value);
 }
 
 /**
@@ -150,40 +132,12 @@ function writePackage(pkg, outputPath) {
   fs.writeFileSync(outputPath, pkg.getBuffer());
 }
 
-/**
- * End-to-end helper: load the accumulated output package if one already
- * exists at `outputPath` (otherwise the template), inject the photo into the
- * given swatch, and write the result back to `outputPath`. This is what the
- * CLI's `assign` command runs.
- *
- * A single Mods-folder .package accumulates every Sim's swatch this way:
- * the first `assign` for a given `--output` clones the template, and every
- * subsequent `assign` for the SAME `--output` (a different photo_key/swatch,
- * normally) reopens that same file and adds to it, instead of starting over
- * from the template and losing previously-assigned swatches.
- *
- * @param {object} args
- * @param {string} args.templatePath
- * @param {Buffer} args.pngBuffer
- * @param {string} args.outputPath
- * @param {number} args.swatchIndex Zero-based swatch index (resolved via the photo_manifest).
- * @returns {Promise<{ outputPath: string, textureKey: import("@s4tk/models").ResourceKey }>}
- */
-async function assignPhotoToTemplateFile({ templatePath, pngBuffer, outputPath, swatchIndex }) {
-  const basePath = resolveBasePackagePath({ templatePath, outputPath });
-  const pkg = loadTemplatePackage(basePath);
-  const { textureKey } = await assignPhotoToPackage(pkg, pngBuffer, swatchIndex);
-  writePackage(pkg, outputPath);
-  return { outputPath, textureKey };
-}
-
 module.exports = {
+  CASP_RESOURCE_TYPE,
   loadTemplatePackage,
-  listTextureEntriesSorted,
-  countSwatches,
   resolveBasePackagePath,
-  findTextureEntryForSwatch,
-  assignPhotoToPackage,
+  readCaspTgis,
+  findTemplateCasp,
+  addPhotoCasp,
   writePackage,
-  assignPhotoToTemplateFile,
 };

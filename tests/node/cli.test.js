@@ -3,171 +3,90 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
-const os = require("node:os");
 const path = require("node:path");
 
 const { Package } = require("@s4tk/models");
-const { BinaryResourceType } = require("@s4tk/models/enums");
 
 const { main, runAssign } = require("../../companion/src/index");
-const { writeSyntheticTemplatePackage } = require("../../companion/src/syntheticTemplate");
+const { CASP_RESOURCE_TYPE } = require("../../companion/src/packageBuilder");
 const { makeSolidColorPng } = require("../../companion/src/png");
-const { loadManifest } = require("../../companion/src/manifest");
+const { formatInstance, loadManifest } = require("../../companion/src/manifest");
+const { TEMPLATE_PATH, makeTmpDir } = require("./helpers");
 
-function makeTmpDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "photoface-cli-test-"));
+function setup(t) {
+  const dir = makeTmpDir(t);
+  const photo = (name, rgba) => {
+    const p = path.join(dir, `${name}.png`);
+    fs.writeFileSync(p, makeSolidColorPng(16, rgba));
+    return p;
+  };
+  return {
+    dir,
+    photo,
+    output: path.join(dir, "PhotoFaceMod.package"),
+    manifest: path.join(dir, "photo_manifest.json"),
+  };
 }
 
-test("runAssign() produces a valid output .package and writes the manifest", async (t) => {
-  const dir = makeTmpDir();
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
-
-  const templatePath = path.join(dir, "template.package");
-  await writeSyntheticTemplatePackage(templatePath, { label: "cli-test" });
-
-  // 4px is the minimum @s4tk/images accepts for DDS conversion; still a tiny
-  // fixture, no need for a versioned binary PNG file.
-  const photoPath = path.join(dir, "photo.png");
-  fs.writeFileSync(photoPath, makeSolidColorPng(4, [255, 0, 0, 255]));
-
-  const outputPath = path.join(dir, "PhotoFaceMod.package");
-  const manifestPath = path.join(dir, "photo_manifest.json");
-
+test("runAssign() writes the package with the photo CASP and records it in the manifest", async (t) => {
+  const s = setup(t);
   const result = await runAssign({
-    photo: photoPath,
+    photo: s.photo("rafael", [255, 0, 0, 255]),
     "photo-key": "rafael",
-    manifest: manifestPath,
+    manifest: s.manifest,
     "sim-name": "Fulano",
-    template: templatePath,
-    output: outputPath,
+    template: TEMPLATE_PATH,
+    output: s.output,
   });
 
-  assert.equal(result.outputPath, outputPath);
-  assert.equal(result.swatchIndex, 0);
-  assert.ok(fs.existsSync(outputPath));
+  assert.deepEqual(loadManifest(s.manifest), { rafael: formatInstance(result.caspInstance) });
+  const pkg = Package.from(fs.readFileSync(s.output));
+  assert.ok(pkg.entries.some((e) => e.key.type === CASP_RESOURCE_TYPE && e.key.instance === result.caspInstance));
+});
 
-  const manifest = loadManifest(manifestPath);
-  assert.deepEqual(manifest, { rafael: 0 });
+test("assign for two Sims accumulates both CASPs in one .package; re-running replaces", async (t) => {
+  const s = setup(t);
+  const run = (key, rgba) =>
+    runAssign({ photo: s.photo(key, rgba), "photo-key": key, manifest: s.manifest, template: TEMPLATE_PATH, output: s.output });
 
-  const pkg = Package.from(fs.readFileSync(outputPath));
-  const textureEntry = pkg.entries.find(
-    (e) => e.key.type === BinaryResourceType.DstImage && e.key.instance === result.textureKey.instance
-  );
-  assert.ok(textureEntry, "expected the allocated swatch's resource key to be present in the output");
-  assert.equal(textureEntry.value.image.isShuffled, true);
+  const rafael = await run("rafael", [255, 0, 0, 255]);
+  const irmao = await run("irmao", [0, 0, 255, 255]);
+  const rafaelAgain = await run("rafael", [0, 255, 0, 255]);
+
+  assert.equal(rafaelAgain.caspInstance, rafael.caspInstance);
+  assert.deepEqual(loadManifest(s.manifest), {
+    irmao: formatInstance(irmao.caspInstance),
+    rafael: formatInstance(rafael.caspInstance),
+  });
+  const pkg = Package.from(fs.readFileSync(s.output));
+  const casps = pkg.entries.filter((e) => e.key.type === CASP_RESOURCE_TYPE).map((e) => e.key.instance);
+  assert.equal(casps.length, 3, "template + 2 photos");
+  assert.ok(casps.includes(rafael.caspInstance) && casps.includes(irmao.caspInstance));
 });
 
 test("main() end-to-end via the `assign` subcommand", async (t) => {
-  const dir = makeTmpDir();
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
-
-  const templatePath = path.join(dir, "template.package");
-  await writeSyntheticTemplatePackage(templatePath, { label: "cli-test-e2e" });
-
-  const photoPath = path.join(dir, "photo.png");
-  fs.writeFileSync(photoPath, makeSolidColorPng(4, [0, 255, 0, 255]));
-
-  const outputPath = path.join(dir, "PhotoFaceMod.package");
-  const manifestPath = path.join(dir, "photo_manifest.json");
-
-  await main([
-    "assign",
-    "--photo",
-    photoPath,
-    "--photo-key",
-    "ciclana",
-    "--manifest",
-    manifestPath,
-    "--sim-name",
-    "Ciclana",
-    "--template",
-    templatePath,
-    "--output",
-    outputPath,
-  ]);
-
-  assert.ok(fs.existsSync(outputPath));
-  assert.deepEqual(loadManifest(manifestPath), { ciclana: 0 });
-});
-
-test("running assign twice for the same --output accumulates both Sims' textures in one .package", async (t) => {
-  const dir = makeTmpDir();
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
-
-  const templatePath = path.join(dir, "template.package");
-  await writeSyntheticTemplatePackage(templatePath, { label: "cli-test-accumulate", swatchCount: 4 });
-
-  const outputPath = path.join(dir, "PhotoFaceMod.package");
-  const manifestPath = path.join(dir, "photo_manifest.json");
-
-  const photoRafaelPath = path.join(dir, "rafael.png");
-  fs.writeFileSync(photoRafaelPath, makeSolidColorPng(4, [255, 0, 0, 255]));
-  const photoIrmaoPath = path.join(dir, "irmao.png");
-  fs.writeFileSync(photoIrmaoPath, makeSolidColorPng(4, [0, 0, 255, 255]));
-
-  const resultRafael = await runAssign({
-    photo: photoRafaelPath,
-    "photo-key": "rafael",
-    manifest: manifestPath,
-    template: templatePath,
-    output: outputPath,
-  });
-
-  const resultIrmao = await runAssign({
-    photo: photoIrmaoPath,
-    "photo-key": "irmao",
-    manifest: manifestPath,
-    template: templatePath,
-    output: outputPath,
-  });
-
-  assert.notEqual(resultRafael.swatchIndex, resultIrmao.swatchIndex);
-  assert.notEqual(resultRafael.textureKey.instance, resultIrmao.textureKey.instance);
-
-  assert.deepEqual(loadManifest(manifestPath), { rafael: resultRafael.swatchIndex, irmao: resultIrmao.swatchIndex });
-
-  // The single accumulated output package must contain BOTH overwritten
-  // resource keys - not just the last one written.
-  const pkg = Package.from(fs.readFileSync(outputPath));
-  const keys = pkg.entries.filter((e) => e.key.type === BinaryResourceType.DstImage).map((e) => e.key.instance);
-
-  assert.ok(keys.includes(resultRafael.textureKey.instance), "rafael's swatch must still be present");
-  assert.ok(keys.includes(resultIrmao.textureKey.instance), "irmao's swatch must still be present");
-});
-
-test("re-running assign for the same photo_key reuses its existing swatch instead of allocating a new one", async (t) => {
-  const dir = makeTmpDir();
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
-
-  const templatePath = path.join(dir, "template.package");
-  await writeSyntheticTemplatePackage(templatePath, { label: "cli-test-reuse" });
-
-  const outputPath = path.join(dir, "PhotoFaceMod.package");
-  const manifestPath = path.join(dir, "photo_manifest.json");
-
-  const firstPhoto = path.join(dir, "first.png");
-  fs.writeFileSync(firstPhoto, makeSolidColorPng(4, [10, 20, 30, 255]));
-  const updatedPhoto = path.join(dir, "updated.png");
-  fs.writeFileSync(updatedPhoto, makeSolidColorPng(4, [200, 210, 220, 255]));
-
-  const first = await runAssign({
-    photo: firstPhoto,
-    "photo-key": "rafael",
-    manifest: manifestPath,
-    template: templatePath,
-    output: outputPath,
-  });
-
-  const second = await runAssign({
-    photo: updatedPhoto,
-    "photo-key": "rafael",
-    manifest: manifestPath,
-    template: templatePath,
-    output: outputPath,
-  });
-
-  assert.equal(second.swatchIndex, first.swatchIndex);
-  assert.deepEqual(loadManifest(manifestPath), { rafael: first.swatchIndex });
+  const s = setup(t);
+  const originalWrite = process.stdout.write;
+  let captured = "";
+  process.stdout.write = (chunk) => {
+    captured += chunk;
+    return true;
+  };
+  try {
+    await main([
+      "assign",
+      "--photo", s.photo("ciclana", [0, 255, 0, 255]),
+      "--photo-key", "ciclana",
+      "--manifest", s.manifest,
+      "--template", TEMPLATE_PATH,
+      "--output", s.output,
+    ]);
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+  assert.match(captured, /-> CASP 0x[0-9A-F]{16}/);
+  assert.ok(fs.existsSync(s.output));
+  assert.deepEqual(Object.keys(loadManifest(s.manifest)), ["ciclana"]);
 });
 
 test("main() prints usage when called with --help", async () => {
@@ -177,47 +96,14 @@ test("main() prints usage when called with --help", async () => {
     captured += chunk;
     return true;
   };
-
   try {
     await main(["--help"]);
   } finally {
     process.stdout.write = originalWrite;
   }
-
   assert.match(captured, /Usage:/);
 });
 
 test("runAssign() rejects when required options are missing", async () => {
   await assert.rejects(() => runAssign({}), /Missing required option/);
-});
-
-test("main() rejects a non-integer --swatch-index override", async (t) => {
-  const dir = makeTmpDir();
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
-
-  const templatePath = path.join(dir, "template.package");
-  await writeSyntheticTemplatePackage(templatePath, { label: "cli-test-bad-index" });
-
-  const photoPath = path.join(dir, "photo.png");
-  fs.writeFileSync(photoPath, makeSolidColorPng(4, [0, 0, 255, 255]));
-
-  await assert.rejects(
-    () =>
-      main([
-        "assign",
-        "--photo",
-        photoPath,
-        "--photo-key",
-        "rafael",
-        "--manifest",
-        path.join(dir, "photo_manifest.json"),
-        "--swatch-index",
-        "not-a-number",
-        "--template",
-        templatePath,
-        "--output",
-        path.join(dir, "out.package"),
-      ]),
-    /non-negative integer/
-  );
 });
