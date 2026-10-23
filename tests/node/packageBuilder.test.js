@@ -26,7 +26,7 @@ test("the real template has one CASP whose TGI list points at its RLE2 diffuse",
   assert.ok(pkg.entries.some((e) => e.key.type === RLE2_RESOURCE_TYPE && e.key.instance === diffuse[0].instance));
 });
 
-test("addPhotoCasp clones the CASP pointing at a new texture, keeping meshes shared", async () => {
+test("addPhotoCasp clones the CASP with a new texture, keeping meshes shared", async () => {
   const pkg = loadTemplatePackage(TEMPLATE_PATH);
   const before = pkg.entries.length;
   const { caspInstance, textureInstance } = await addPhotoCasp(pkg, "fulano", makeSolidColorPng(8));
@@ -38,8 +38,8 @@ test("addPhotoCasp clones the CASP pointing at a new texture, keeping meshes sha
   const originalTgis = readCaspTgis(original.value.getBuffer());
   assert.equal(cloneTgis.find((t) => t.type === RLE2_RESOURCE_TYPE).instance, textureInstance);
   assert.deepEqual(
-    cloneTgis.filter((t) => t.type !== RLE2_RESOURCE_TYPE),
-    originalTgis.filter((t) => t.type !== RLE2_RESOURCE_TYPE),
+    cloneTgis.filter((t) => t.type !== RLE2_RESOURCE_TYPE).map(({ at, ...t }) => t),
+    originalTgis.filter((t) => t.type !== RLE2_RESOURCE_TYPE).map(({ at, ...t }) => t),
     "meshes and region map stay the template's"
   );
   assert.ok(pkg.entries.some((e) => e.key.type === RLE2_RESOURCE_TYPE && e.key.instance === textureInstance));
@@ -67,20 +67,17 @@ test("findTemplateCasp refuses an accumulated package when the manifest is lost"
   assert.throws(() => findTemplateCasp(pkg), /exatamente 1 CASP/);
 });
 
-test("each clone gets its own internal name, same length as the template's", async () => {
+test("each clone gets its own internal name and the TGI list still parses", async () => {
   const name = (buf) => {
     const len = buf[12];
     return Buffer.from(buf.subarray(13, 13 + len)).swap16().toString("utf16le");
   };
   const pkg = loadTemplatePackage(TEMPLATE_PATH);
   const a = await addPhotoCasp(pkg, "fulano", makeSolidColorPng(8));
-  const b = await addPhotoCasp(pkg, "ciclano", makeSolidColorPng(8), new Set([a.caspInstance]));
   const byInstance = (i) => casps(pkg).find((e) => e.key.instance === i).value.getBuffer();
-  const template = name(byInstance(TEMPLATE_CASP));
-  const na = name(byInstance(a.caspInstance));
-  const nb = name(byInstance(b.caspInstance));
-  assert.notEqual(na, template);
-  assert.notEqual(na, nb);
-  assert.equal(na.length, template.length);
-  assert.equal(na.slice(0, -18), template.slice(0, -18));
+  const clone = byInstance(a.caspInstance);
+  assert.equal(name(clone), "PhotoFace_fulano_Papelao");
+  const tgis = readCaspTgis(clone);
+  assert.equal(tgis.length, readCaspTgis(byInstance(TEMPLATE_CASP)).length);
+  assert.equal(tgis.find((t) => t.type === RLE2_RESOURCE_TYPE).instance, a.textureInstance);
 });

@@ -144,15 +144,10 @@ pip install -r tests/python/requirements.txt   # pytest + mocks da API do jogo
 pytest tests/python/ -v</code></pre>
   <p>O que essa suíte cobre:</p>
   <ul>
-    <li>Lógica de leitura/escrita do <code>assignments.json</code> (serialização, chaves por <code>sim_id</code>
-      + GUID de save slot, tratamento de arquivo ausente/corrompido).</li>
-    <li>Comportamento dos handlers de evento (<code>ZoneEarlyLoadEvent</code>, <code>ZoneLateLoadEvent</code>,
-      <code>SaveEvent</code>) com a API do jogo <strong>mockada</strong> — os módulos <code>sims4</code>,
-      <code>services</code> etc. não existem fora do jogo, então os testes usam stubs/fakes que imitam a
-      interface relevante, não o comportamento real do engine.</li>
-    <li>Parsing e validação de argumentos do comando de console (<code>@sims4.commands.Command</code>).</li>
-    <li>Qualquer lógica de mapeamento "Sim → qual swatch/CASP aplicar" que seja pura o suficiente para isolar
-      da chamada real de aplicação do acessório no jogo.</li>
+    <li>Leitura e junção dos manifestos (<code>photo_manifest*.json</code>).</li>
+    <li>Comandos <code>assign</code>, <code>next</code>, <code>remove</code> e <code>list</code> contra um Sim falso
+      com várias roupas: a cara entra no lugar dos óculos, troca, sai, e óculos de verdade ficam quando não há cara.</li>
+    <li>Build do <code>.ts4script</code>.</li>
   </ul>
 
   <h3>2. Companion tool — <code>node:test</code></h3>

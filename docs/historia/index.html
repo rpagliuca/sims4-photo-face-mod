@@ -116,9 +116,9 @@
 
 <div class="stats">
   <div class="stat"><b>2</b><span>sessões de agente, com 3 meses de intervalo</span></div>
-  <div class="stat"><b>~180</b><span>capturas de tela que o agente leu</span></div>
-  <div class="stat"><b>141</b><span>cliques no Windows remoto</span></div>
-  <div class="stat"><b>52</b><span>testes automatizados</span></div>
+  <div class="stat"><b>~300</b><span>capturas de tela que o agente leu</span></div>
+  <div class="stat"><b>30</b><span>caras de papelão na coleção</span></div>
+  <div class="stat"><b>40</b><span>testes automatizados</span></div>
 </div>
 
 <div class="strip">
@@ -238,6 +238,46 @@
   </div>
 </li>
 
+<li>
+  <div class="when">23 de outubro · 11:58</div>
+  <h3>Pedido novo: uma coleção, com troca a qualquer momento</h3>
+  <p>Uma cara só não bastava. O pedido passou a ser uma coleção variada de caras de papelão já instalada, e poder trocar a cara do Sim, ou tirar, quando quiser.</p>
+  <p>O agente escreveu um gerador que monta rostos a partir de peças: formato do rosto, olhos, sobrancelhas, nariz, boca e extras como tapa-olho, bigode, orelhas de gato, curativo e lágrima. Saíram 30 caras.</p>
+  <figure><img src="img/pack-colecao.jpg" alt="As 30 caras de papelão da coleção, em grade" loading="lazy"><figcaption>A coleção que vem com o mod.</figcaption></figure>
+  <p>A ferramenta de fotos ganhou o comando <code>pack</code>, que transforma uma pasta de imagens num único pacote, uma peça por imagem. O mod ganhou <code>photofacemod.next</code>, que passa para a próxima cara.</p>
+  <figure><img src="img/pack-next-rostos.jpg" alt="Sete prints seguidos da mesma Sim, cada um com uma cara diferente" loading="lazy"><figcaption>Sete vezes <code>photofacemod.next</code> no console.</figcaption></figure>
+</li>
+
+<li>
+  <div class="when">23 de outubro · 13:50 a 14:55</div>
+  <h3>30 caras viraram uma só no editor</h3>
+  <p>No editor de Sims (CAS), a coleção aparecia como uma peça única. O jogo tinha agrupado as 30 como variações de cor de um mesmo item, todas com a mesma cor. Pelo console a troca funcionava; pelo editor, não.</p>
+  <p>Não havia documentação sobre como o jogo agrupa as peças. O agente testou uma hipótese por vez, e cada teste custava fechar o jogo, instalar e abrir de novo (cerca de 5 minutos):</p>
+  <table>
+    <thead><tr><th>Tentativa</th><th>Resultado</th></tr></thead>
+    <tbody>
+      <tr><td>Nome interno diferente em cada cara</td><td>Continuou uma peça só</td></tr>
+      <tr><td>Malha 3D própria para cada cara</td><td>Pior: as caras ficaram invisíveis</td></tr>
+      <tr><td>Ordem de exibição (<code>sortPriority</code>) diferente</td><td>Continuou uma peça só</td></tr>
+      <tr><td>Nome reescrito por inteiro</td><td>Continuou uma peça só</td></tr>
+      <tr><td>Um campo de 4 bytes logo depois da ordem de exibição</td><td>Funcionou</td></tr>
+    </tbody>
+  </table>
+  <p>A pista veio do Sims4Studio. O agente criou variações de cor de uma peça pelo próprio programa, comparou os arquivos byte a byte e viu quais campos mudavam e quais ficavam iguais. O campo que resolveu é um dos que ficavam iguais entre variações.</p>
+  <figure><img src="img/pack-cas-lista.jpg" alt="Editor de Sims com a lista de caras de papelão, cada uma como peça separada" loading="lazy"><figcaption>Agora cada cara é uma peça no editor. A amarela é a placa de teste.</figcaption></figure>
+  <div class="duo">
+    <figure><img src="img/pack-cas-porquinho.jpg" alt="Editor com a cara de porquinho" loading="lazy"></figure>
+    <figure><img src="img/pack-cas-nerd.jpg" alt="Editor com a cara de nerd" loading="lazy"></figure>
+    <figure><img src="img/pack-cas-chorao.jpg" alt="Editor com a cara de choro" loading="lazy"></figure>
+    <figure><img src="img/pack-cas-bravo.jpg" alt="Editor com a cara brava" loading="lazy"></figure>
+  </div>
+  <p>Um clique troca a cara; o "x" na peça tira. A escolha fica gravada no save, como qualquer roupa.</p>
+  <div class="duo">
+    <figure><img src="img/pack-cas-corpo.jpg" alt="Sim de corpo inteiro com uma cara de papelão no editor" loading="lazy"></figure>
+    <figure><img src="img/pack-conversa.jpg" alt="Sim com cara de vampiro conversando com outro Sim no parque" loading="lazy"><figcaption>A vida segue normal com a cara de papelão.</figcaption></figure>
+  </div>
+</li>
+
 </ol>
 
 <h2>Quem fez o quê</h2>
@@ -246,10 +286,10 @@
   <tbody>
     <tr><td>Julho</td><td>Claude, num terminal Linux (modelo e esforço não ficaram registrados)</td><td>Pesquisa, arquitetura, código, testes, documentação, release alfa, tentativa com Wine</td></tr>
     <tr><td>Outubro</td><td>Um agente coordenador, acionado por voz</td><td>Reabriu a tarefa e subiu o agente de trabalho</td></tr>
-    <tr><td>Outubro</td><td>Claude Opus 5.5, esforço médio</td><td>CI, controle do Windows, placa 3D, codificador de textura, correções, testes no jogo, esta página</td></tr>
+    <tr><td>Outubro</td><td>Claude Opus 5.5, esforço médio</td><td>CI, controle do Windows, placa 3D, codificador de textura, correções, coleção de caras, testes no jogo, esta página</td></tr>
   </tbody>
 </table>
-<p>O dono do projeto fez o pedido, comprou o jogo em julho, digitou o PIN do Moonlight três vezes, autorizou o merge dos pull requests e escolheu a cara D.</p>
+<p>O dono do projeto fez o pedido, comprou o jogo em julho, digitou o PIN do Moonlight três vezes, autorizou o merge dos pull requests, escolheu a cara D e pediu a coleção.</p>
 
 <h2>Como o agente operava o Windows</h2>
 <p>Num ciclo: tirar uma captura da janela do Moonlight, ler a imagem, decidir, mandar clique ou tecla por <code>xdotool</code>, capturar de novo.</p>
