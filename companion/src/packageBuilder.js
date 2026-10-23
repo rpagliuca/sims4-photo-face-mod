@@ -10,6 +10,9 @@ const { RLE2_RESOURCE_TYPE } = require("./rle2");
 const { photoToTextureResource } = require("./texture");
 
 const CASP_RESOURCE_TYPE = 0x034aeecb;
+const GEOM_RESOURCE_TYPE = 0x015a1849;
+const REGION_MAP_RESOURCE_TYPE = 0xac16fbec;
+const MESH_TYPES = new Set([GEOM_RESOURCE_TYPE, REGION_MAP_RESOURCE_TYPE]);
 
 /**
  * Reads a .package file from disk and parses it as a DBPF Package.
@@ -85,9 +88,10 @@ function findTemplateCasp(pkg, generated = new Set()) {
 
 /**
  * Clones the template CASP for one photo: a new CASP instance whose diffuse
- * TGI points at a new RLE2 texture made from the photo. Everything else
- * (meshes, region map) is shared with the template. Re-running for the same
- * photo_key overwrites that photo's CASP and texture in place, since both
+ * TGI points at a new RLE2 texture made from the photo, its own name and its
+ * own sortPriority (see renameCasp). Meshes and region map stay shared with
+ * the template: copies of them made the part invisible in game. Re-running
+ * for the same photo_key overwrites it in place, since both
  * instances are derived from the key.
  *
  * @param {import("@s4tk/models").Package} pkg Package to add to (mutated).
@@ -98,11 +102,13 @@ function findTemplateCasp(pkg, generated = new Set()) {
  */
 async function addPhotoCasp(pkg, photoKey, pngBuffer, generated = new Set()) {
   const template = findTemplateCasp(pkg, generated);
-  const caspBuffer = Buffer.from(template.value.getBuffer());
+  const caspInstance = deriveInstanceId(photoKey, "casp");
+  const renamed = renameCasp(Buffer.from(template.value.getBuffer()), photoKey);
+  const caspBuffer = renamed.casp;
+  setSortPriority(caspBuffer, renamed.nameEnd, caspInstance);
   const diffuse = readCaspTgis(caspBuffer).find((t) => t.type === RLE2_RESOURCE_TYPE);
   if (!diffuse) throw new Error("O CASP template não referencia nenhuma textura RLE2");
 
-  const caspInstance = deriveInstanceId(photoKey, "casp");
   const textureInstance = deriveInstanceId(photoKey, "texture");
   caspBuffer.writeBigUInt64LE(textureInstance, diffuse.at);
 
@@ -111,6 +117,60 @@ async function addPhotoCasp(pkg, photoKey, pngBuffer, generated = new Set()) {
   upsert(pkg, textureKey, await photoToTextureResource(pngBuffer));
   upsert(pkg, caspKey, RawResource.from(caspBuffer));
   return { caspInstance, textureInstance };
+}
+
+/**
+ * Gives a clone its own internal name, `PhotoFace_<photoKey>_<sufixo>`.
+ *
+ * The CAS catalog groups parts into one item with swatches by the name minus
+ * its last `_` segment (EA's `ymAcc_GlassesSquare_Black` and `_Brown` are one
+ * item) together with sortPriority; validated in game: clones that only
+ * differed after the last `_` showed up as a single item. The name is a
+ * 7-bit-length-prefixed big-endian UTF-16 string at offset 12; when its
+ * length changes, the TGI list offset (u32 at 4, relative to 8) moves with it.
+ *
+ * @param {Buffer} casp CASP bytes.
+ * @param {string} photoKey
+ * @returns {{ casp: Buffer, nameEnd: number }} New bytes and the offset right after the name.
+ */
+function renameCasp(casp, photoKey) {
+  let pos = 12;
+  let length = 0;
+  let shift = 0;
+  let byte;
+  do {
+    byte = casp[pos++];
+    length |= (byte & 0x7f) << shift;
+    shift += 7;
+  } while (byte & 0x80);
+  const oldEnd = pos + length;
+  const name = Buffer.from(`PhotoFace_${photoKey.replace(/[^A-Za-z0-9-]/g, "-")}_Papelao`, "utf16le").swap16();
+  const prefix = [];
+  let n = name.length;
+  do {
+    prefix.push((n & 0x7f) | (n > 0x7f ? 0x80 : 0));
+    n >>= 7;
+  } while (n > 0);
+  const out = Buffer.concat([casp.subarray(0, 12), Buffer.from(prefix), name, casp.subarray(oldEnd)]);
+  const delta = out.length - casp.length;
+  out.writeUInt32LE(casp.readUInt32LE(4) + delta, 4);
+  return { casp: out, nameEnd: 12 + prefix.length + name.length };
+}
+
+/**
+ * sortPriority is the float right after the name (Sims4Studio shows it as
+ * "SortOrder: <sortPriority>-<swatch>"); swatches of one EA item share it, so
+ * each face gets its own value too.
+ *
+ * @param {Buffer} casp CASP bytes (mutated).
+ * @param {number} nameEnd Offset right after the name.
+ * @param {bigint} instance
+ */
+function setSortPriority(casp, nameEnd, instance) {
+  casp.writeFloatLE(1000 + Number(instance % 100000n), nameEnd);
+  // u32 depois do secondarySortIndex (o s4pi chama de propertyID): é igual
+  // entre as variações de uma peça do Sims4Studio; cada cara ganha o seu
+  casp.writeUInt32LE(Number(instance & 0xffffffffn), nameEnd + 6);
 }
 
 function upsert(pkg, key, value) {
@@ -137,6 +197,7 @@ module.exports = {
   loadTemplatePackage,
   resolveBasePackagePath,
   readCaspTgis,
+  renameCasp,
   findTemplateCasp,
   addPhotoCasp,
   writePackage,

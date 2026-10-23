@@ -1,5 +1,5 @@
 """Installs lightweight fakes for The Sims 4's game-only modules
-(`sims4`, `services`, `server_commands.argument_helpers`, `zone`,
+(`sims4`, `services`, `server_commands.argument_helpers`,
 `protocolbuffers`, `cas.cas`)
 into sys.modules before any test imports photo_face_mod.ts4_integration or
 photo_face_mod.hooks. The real game API is not decompiled/available here;
@@ -75,17 +75,6 @@ def _build_fake_argument_helpers():
     sys.modules["server_commands.argument_helpers"] = argument_helpers
 
 
-def _build_fake_zone():
-    zone = types.ModuleType("zone")
-
-    class Zone:
-        def on_loading_screen_animation_finished(self, *args, **kwargs):
-            return "original_result"
-
-    zone.Zone = Zone
-    sys.modules["zone"] = zone
-
-
 def _build_fake_protobuffers_and_cas():
     protocolbuffers = types.ModuleType("protocolbuffers")
     s4common = types.ModuleType("protocolbuffers.S4Common_pb2")
@@ -113,7 +102,6 @@ _build_fake_sims4()
 _build_fake_services()
 _build_fake_protobuffers_and_cas()
 _build_fake_argument_helpers()
-_build_fake_zone()
 
 
 from fakes import FakeSim

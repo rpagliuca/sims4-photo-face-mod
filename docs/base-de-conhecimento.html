@@ -331,27 +331,14 @@
 
   <h2 id="persistencia">Persistência de dados por Sim</h2>
   <p>
-    Não existe API nativa da EA para anexar um dado arbitrário (como "qual foto pertence a este Sim") a um
-    objeto <code>Sim</code> de forma persistente através de save/load. Dois padrões de solução aparecem no
-    S4CL:
+    A cara é uma peça CAS nas roupas do Sim, e o jogo grava as roupas no save. Por isso o mod não guarda nada à
+    parte: <code>photofacemod.assign</code>, <code>next</code> e <code>remove</code> editam as roupas
+    (<code>save_outfits()</code> → listas de ids e body types → <code>_base.outfits</code> →
+    <code>resend_outfits()</code>), e uma troca feita no CAS vale do mesmo jeito.
   </p>
-  <h4>Opção adotada: arquivo externo</h4>
   <p>
-    <strong><code>CommonPersistedSimDataStorage</code></strong> /
-    <strong><code>CommonFilePersistenceService</code></strong> do S4CL: um JSON externo, fora do save do jogo,
-    em <code>Mods/mod_data/&lt;nome-do-mod&gt;/</code>, chaveado por <code>sim_id</code> combinado com o GUID
-    do save slot (para não misturar dados entre saves diferentes ou saves duplicados/renomeados). É mais
-    simples de implementar e depurar (é só um JSON legível), ao custo de viver fora do arquivo de save
-    propriamente dito — copiar/mover só o <code>.save</code> sem levar a pasta <code>mod_data</code> junto
-    perde a atribuição de fotos.
-  </p>
-  <h4>Alternativa mais robusta, não adotada inicialmente</h4>
-  <p>
-    <strong><code>CommonHiddenHouseholdPersistenceService</code></strong> do S4CL: grava um blob JSON no campo
-    <code>.description</code> de um <code>Household</code> (residência) invisível criado só para esse fim,
-    dentro do save de verdade do jogo. É mais robusto (viaja junto com o <code>.save</code>, sobrevive a
-    backup/restore do save inteiro), mas mais complexo de implementar e de depurar. Fica documentado aqui como
-    caminho de evolução caso o arquivo externo se mostre insuficiente na prática.
+    A primeira versão guardava um <code>assignments.json</code> em <code>Mods/mod_data/</code> e reaplicava a foto
+    a cada carregamento. Isso desfazia trocas feitas no CAS e foi removido em 2026-10-23.
   </p>
 
   <h2 id="validado-no-jogo">Validado no jogo (2026-10-23, versão 1.128.90)</h2>
@@ -366,8 +353,12 @@
       <code>parts.ids</code> e <code>body_types_list.body_types</code> de cada roupa → gravar em
       <code>sim_info._base.outfits</code> → <code>resend_outfits()</code> (o mesmo padrão do
       <code>CommonSimOutfitIO</code> do S4CL). O body type vem de <code>cas.cas.get_caspart_bodytype</code>.</li>
-    <li><code>zone_spin_up.ZoneSpinUp</code> <strong>não existe</strong> (ModuleNotFoundError). O gancho de
-      carregamento usa <code>zone.Zone.on_loading_screen_animation_finished</code>.</li>
+    <li><strong>Como o CAS agrupa peças:</strong> CASPs iguais exceto pela textura viram uma peça só, com variações.
+      Para cada cara aparecer separada foi preciso mudar o <code>u32</code> logo depois do
+      <code>secondarySortIndex</code> (o s4pi chama de <code>propertyID</code>). Nome interno, malha própria e
+      <code>sortPriority</code> diferentes não bastaram; malha copiada deixou a peça invisível.</li>
+    <li><code>zone_spin_up.ZoneSpinUp</code> <strong>não existe</strong> (ModuleNotFoundError). O mod deixou
+      de usar gancho de carregamento: as roupas, com a cara, ficam gravadas no save.</li>
     <li>Depois de uma atualização do jogo, ele <strong>desliga os mods sozinho</strong>: religar em
       Opções → Outros → "Enable Custom Content and Mods" e reiniciar.</li>
     <li>Com a placa a 1 cm dos óculos, o nariz atravessava; a 4 cm, não. Ficou uma linha escura fina na borda de

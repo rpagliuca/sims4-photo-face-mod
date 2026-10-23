@@ -107,3 +107,20 @@ test("main() prints usage when called with --help", async () => {
 test("runAssign() rejects when required options are missing", async () => {
   await assert.rejects(() => runAssign({}), /Missing required option/);
 });
+
+test("runPack() builds one CASP per PNG, keyed by file name, from scratch", async (t) => {
+  const { runPack } = require("../../companion/src/index");
+  const s = setup(t);
+  const dir = path.join(s.dir, "caras");
+  fs.mkdirSync(dir);
+  fs.writeFileSync(path.join(dir, "pirata.png"), makeSolidColorPng(16, [1, 2, 3, 255]));
+  fs.writeFileSync(path.join(dir, "robo.png"), makeSolidColorPng(16, [4, 5, 6, 255]));
+  fs.writeFileSync(path.join(dir, "leia-me.txt"), "ignorado");
+
+  const result = await runPack({ dir, manifest: s.manifest, template: TEMPLATE_PATH, output: s.output });
+
+  assert.deepEqual(result.keys, ["pirata", "robo"]);
+  assert.deepEqual(Object.keys(loadManifest(s.manifest)).sort(), ["pirata", "robo"]);
+  const pkg = Package.from(fs.readFileSync(s.output));
+  assert.equal(pkg.entries.filter((e) => e.key.type === CASP_RESOURCE_TYPE).length, 3, "template + 2 caras");
+});

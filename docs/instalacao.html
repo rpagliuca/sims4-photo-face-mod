@@ -137,8 +137,11 @@
   </div>
   <pre><code>Mods/
 └── PhotoFaceMod/
-    ├── photofacemod.ts4script   ✅ funciona (1 nível abaixo de Mods/)
-    └── photofacemod.package     ✅ também funciona aqui
+    ├── photofacemod.ts4script        ✅ funciona (1 nível abaixo de Mods/)
+    ├── PhotoFace_Papelao.package     ✅ a coleção de caras
+    ├── photo_manifest_papelao.json
+    ├── photofacemod.package          ✅ as suas fotos (opcional)
+    └── photo_manifest.json
 
 # ISSO NÃO FUNCIONA para o .ts4script:
 Mods/
@@ -198,17 +201,35 @@ node companion/src/index.js assign ^
     é o mod Python quem lê o <code>photo_manifest.json</code> em runtime para saber quais fotos existem.
   </p>
 
-  <h2>Atribuindo a foto a um Sim, dentro do jogo</h2>
-  <ol>
-    <li>Entre em uma partida com o Sim desejado carregado no lote atual.</li>
-    <li>Abra o console de comandos: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd>.</li>
-    <li>Digite o comando de atribuição do mod (exposto via <code>@sims4.commands.Command</code>, ver
-      <a href="base-de-conhecimento.html#script-mod">Base de Conhecimento</a>) — consulte o
-      <code>README</code> do <code>src/photo_face_mod/</code> para a sintaxe exata mais atual do comando.</li>
-    <li>Feche o console; o acessório deve aparecer imediatamente na cabeça do Sim.</li>
-    <li>Salve o jogo — a atribuição é persistida (ver <a href="base-de-conhecimento.html#persistencia">como a
-      persistência funciona</a>) e deve reaparecer ao recarregar o save.</li>
-  </ol>
+  <h2 id="colecao">A coleção de caras de papelão</h2>
+  <p>
+    O mod vem com 30 caras desenhadas a canetão sobre papelão. Para instalá-las, copie
+    <code>PhotoFace_Papelao.package</code> e <code>photo_manifest_papelao.json</code> para
+    <code>Mods/PhotoFaceMod/</code>. Para gerar os dois arquivos a partir do repositório: <code>make pack-papelao</code>
+    (saem em <code>build/dist/</code>). As imagens ficam em <code>packages/cardboard_faces/png/</code>; o mesmo
+    comando aceita qualquer pasta de PNGs (<code>node companion/src/index.js pack --dir ...</code>).
+  </p>
+  <p>
+    As caras da coleção e as suas fotos convivem: o mod lê todos os <code>photo_manifest*.json</code> da pasta.
+  </p>
+
+  <h2>Trocando a cara de um Sim</h2>
+  <p><strong>Pelo editor de Sims (CAS):</strong> Acessórios → Óculos, filtro <em>Custom Content</em>. Cada cara é
+    uma peça; clique para pôr, clique no "x" da peça para tirar. A cara ocupa o lugar dos óculos.</p>
+  <p><strong>Pelo console</strong> (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd>, com o Sim selecionado no modo ao vivo):</p>
+  <table>
+    <thead><tr><th>Comando</th><th>O que faz</th></tr></thead>
+    <tbody>
+      <tr><td><code>photofacemod.list</code></td><td>Lista as caras instaladas</td></tr>
+      <tr><td><code>photofacemod.assign pirata</code></td><td>Põe a cara <code>pirata</code></td></tr>
+      <tr><td><code>photofacemod.next</code></td><td>Passa para a próxima cara, em ordem alfabética</td></tr>
+      <tr><td><code>photofacemod.remove</code></td><td>Tira a cara</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Os comandos trocam a peça em todas as roupas do Sim. A escolha fica gravada no save do jogo, como uma roupa;
+    o mod não guarda nada à parte. O console não mostra a resposta dos comandos; o efeito aparece no Sim.
+  </p>
 
   <h2 id="troubleshooting">Troubleshooting</h2>
 
@@ -252,11 +273,8 @@ node companion/src/index.js assign ^
   <details>
     <summary>A foto some depois de salvar e carregar o jogo de novo</summary>
     <ul>
-      <li>Confira se a pasta <code>Mods/mod_data/photo_face_mod/</code> não foi apagada/movida — é onde a
-        atribuição por Sim é persistida, separada do arquivo de save em si (ver
-        <a href="base-de-conhecimento.html#persistencia">detalhes de persistência</a>).</li>
-      <li>Copiar/mover um save para outro computador sem levar essa pasta junto perde as atribuições — é uma
-        limitação conhecida da abordagem de arquivo externo.</li>
+      <li>A cara fica gravada no save, como uma roupa. Se o <code>.package</code> com ela sair da pasta Mods, o jogo
+        avisa que removeu itens do CAS e o Sim fica sem a cara.</li>
     </ul>
   </details>
 

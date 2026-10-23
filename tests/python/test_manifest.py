@@ -50,3 +50,12 @@ def test_load_is_cached_until_reload(tmp_path):
 
     manifest.reload()
     assert manifest.cas_part_for("fulano") == 9
+
+
+def test_a_directory_merges_every_photo_manifest_file(tmp_path):
+    _write_manifest(tmp_path / "photo_manifest_papelao.json", {"pirata": "0x1", "robo": "0x2"})
+    _write_manifest(tmp_path / "photo_manifest.json", {"foto": "0x3"})
+    _write_manifest(tmp_path / "outro.json", {"ignorado": "0x9"})
+    manifest = PhotoManifest(tmp_path)
+    assert manifest.photo_keys() == ["foto", "pirata", "robo"]
+    assert manifest.cas_part_ids() == {1: "pirata", 2: "robo", 3: "foto"}
