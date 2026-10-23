@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q
+
+  test-node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: companion/package-lock.json
+      - run: npm ci
+        working-directory: companion
+      - run: npm test
+        working-directory: companion
+
+  # O TS4 embute CPython 3.7: o .ts4script precisa ser compilado com 3.7 de verdade.
+  build-ts4script:
+    runs-on: ubuntu-latest
+    needs: [test-python]
+    container: python:3.7-slim
+    steps:
+      - uses: actions/checkout@v4
+      - run: python build/build_ts4script.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: photofacemod-ts4script
+          path: build/dist/photofacemod.ts4script
