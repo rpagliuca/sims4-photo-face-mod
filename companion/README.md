@@ -1,7 +1,8 @@
 # Companion tool
 
-Node.js CLI that turns a user's PNG photo into the CAS Part texture of a
-`.package` (DBPF) file, for the tosco 2D photo-face accessory. Built on
+Node.js CLI that turns a user's PNG photo into its own CAS part (a clone of
+the plate in `packages/casp_template/base.package` with the photo as
+texture), accumulated in a single `.package` (DBPF). Built on
 [Sims4Toolkit](https://sims4toolkit.com/) (`@s4tk/models`, `@s4tk/images`,
 `@s4tk/hashing`).
 
@@ -19,64 +20,37 @@ node src/index.js assign \
   --photo foto.png \
   --photo-key rafael \
   --manifest "Mods/PhotoFaceMod/photo_manifest.json" \
-  --template packages/casp_template/base.package \
-  --output "Mods/PhotoFaceMod/photofacemod.package" \
-  --sim-name "Rafael"
+  --template ../packages/casp_template/base.package \
+  --output "Mods/PhotoFaceMod/photofacemod.package"
 ```
 
-Run this once per Sim/photo you want to register; each Sim gets a distinct
-`--photo-key` (the same string the player later types in-game as
-`photofacemod.assign <photo_key>`). Re-running with an existing `--photo-key`
-updates that Sim's photo without allocating a new swatch.
+Run it once per photo. Each `--photo-key` (the string typed in-game as
+`photofacemod.assign <photo_key>`) becomes its own CASP; re-running with the
+same key replaces that photo in place, since the CASP and texture instances
+are derived from the key (`fnv64`).
 
-- `--template` must point at a CAS Part `.package` with **N pre-made swatches**
-  (N separate DstImage/shuffled-DDS texture resources, each already wired up
-  internally by the CASP resource — that's what Sims4Studio does when the
-  swatches are created; see `packages/casp_template/README.md`).
-- `--output` is the single accumulated `.package` file the player installs.
-  **If it already exists, it is used as the base instead of `--template`** —
-  so the first `assign` for a given `--output` clones the template, and every
-  later `assign` (a different Sim, normally) adds to that same file instead
-  of starting over and losing previously-assigned Sims. Ship this one file.
-- `--manifest` is `photo_manifest.json` (`photo_key -> swatch_index`), read at
-  runtime by the Python mod's `PhotoManifest`
-  (`src/photo_face_mod/manifest.py`) to resolve `photofacemod.assign
-  <photo_key>`. It must sit at the exact path
-  `Mods/PhotoFaceMod/photo_manifest.json` under the game's user data folder
-  — see `src/photo_face_mod/paths.py::get_manifest_path()` (note:
-  `MODS_FOLDER_NAME = "PhotoFaceMod"` there is the player-facing Mods/
-  subfolder; `MOD_NAME = "photo_face_mod"` is only used for the separate
-  `mod_data/` persistence folder, not this manifest path). Created
-  automatically if it doesn't exist yet.
-- `--sim-name` is optional, logging-only, and does **not** affect which
-  resource is touched — `--photo-key` (via the manifest) is what determines
-  the swatch, on purpose: this is what lets two Sims coexist in the same
-  Mods folder without clobbering each other's texture (see the "no
-  collision" and "accumulates both Sims'" tests in `tests/node/`).
-- `--swatch-index` is an optional escape hatch to force a specific index
-  instead of letting the manifest allocate/reuse one; normal use shouldn't
-  need it.
+- `--template`: `packages/casp_template/base.package`, cloned on the first run.
+- `--output`: the single accumulated `.package` the player installs. **If it
+  already exists, it is used as the base instead of `--template`**, so photos
+  accumulate.
+- `--manifest`: `photo_manifest.json`, `photo_key -> "0x<CASP instance>"`,
+  read at runtime by the Python mod's `PhotoManifest`. It must sit at
+  `Mods/PhotoFaceMod/photo_manifest.json` (see
+  `src/photo_face_mod/paths.py`). The manifest also tells the tool which CASPs
+  in an accumulated package it generated, so keep it next to the package.
+- `--sim-name`: optional, logging only.
 
-**`packages/casp_template/base.package` does not exist yet** (it's built
-separately with Sims4Studio under Wine, see the project's main docs); see
-`src/syntheticTemplate.js` for a placeholder generator (with multiple
-swatches) used in development and tests.
+## What happens to the photo
 
-The photo is center-cropped to a square (no perspective correction — that's
-the point) and converted to DST5 with `@s4tk/images`.
-
-### How photo_key/swatch_index maps to a resource key
-
-`companion/src/manifest.js` owns `photo_key -> swatch_index` (JSON, persisted
-in `photo_manifest.json`, the same file the Python mod reads). Separately,
-`findTextureEntryForSwatch` (in `packageBuilder.js`) maps `swatch_index` to an
-actual `DstImage` resource by sorting all of the template's DstImage entries
-by (group, instance) and indexing into that sorted list. This second mapping
-is a functional fallback, not a guarantee tied to how Sims4Studio orders
-swatches internally. The robust fix — an explicit `template_manifest.json`
-(swatch_index -> {type, group, instance}) emitted alongside `base.package`
-when it's built — is a TODO tracked in `packages/casp_template/README.md`,
-since it depends on how that template is actually produced.
+1. Center-cropped to the plate's aspect (22 x 28 cm) and squeezed into the
+   256 x 128 glasses rectangle (x 512..768, y 128..256) of a transparent
+   1024 x 2048 atlas, the texture layout the game composes for each Sim.
+   No perspective correction: that's the point.
+2. Compressed to DXT5 with mips (`@s4tk/images`) and run-length encoded as
+   RLE2 (`src/rle2.js`, ported from s4pi), the format Sims4Studio writes for
+   CAS diffuse textures.
+3. The template CASP is copied and only its diffuse TGI is rewritten to point
+   at the new texture; meshes and region map stay shared.
 
 ## Tests
 
@@ -84,28 +58,6 @@ since it depends on how that template is actually produced.
 npm test
 ```
 
-Runs `node --test` over `../tests/node/*.test.js` (Node's built-in test
-runner, no extra framework). Covers: PNG cropping logic, PNG→DDS/DST
-conversion (magic bytes + shuffle flag), package assembly/round-trip via
-`@s4tk/models`, `photo_manifest.json` allocation/reuse logic, and the CLI end
-to end against a synthetic in-memory template — including running `assign`
-twice for the same `--output` and confirming both Sims' textures survive in
-the one accumulated `.package`.
-
-## Known TODOs
-
-- **Real CASP template**: not committed yet; the synthetic fixture in
-  `src/syntheticTemplate.js` is not a valid in-game CAS Part, only a
-  DBPF-shaped stand-in for tests.
-- **swatch_index -> resource key mapping**: currently positional (sorted
-  DstImage entries by group/instance), not backed by an explicit manifest.
-  Fine as long as `base.package` isn't regenerated with swatches reordered;
-  a `template_manifest.json` would remove that assumption (see above).
-- **Accumulated package still holds every swatch, always**: each `assign`
-  writes out the full package (all N swatch slots), whether or not all of
-  them are assigned yet - harmless (one file either way), just not minimal.
-- **Standalone binary packaging**: `npm run build` is a placeholder. Wrapping
-  the CLI with `pkg`/`nexe` (cross-compiled for Windows) is not implemented.
-- `npm audit` reports moderate-severity issues inherited transitively from
-  `@s4tk/images` (old `@jimp/*` / `file-type` versions) with no upstream fix
-  available yet.
+Uses Node's built-in test runner against the real `base.package`. Covers the
+RLE2 round trip (byte-identical to Sims4Studio's output), the atlas layout,
+CASP cloning, accumulation and replacement, and the CLI.

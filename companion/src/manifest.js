@@ -4,13 +4,14 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 /**
- * Loads photo_manifest.json (photo_key -> swatch_index), the file the
+ * Loads photo_manifest.json (photo_key -> CASP instance, as a "0x..." hex
+ * string), the file the
  * Python mod's PhotoManifest (src/photo_face_mod/manifest.py) reads at
  * runtime to resolve `photofacemod.assign <photo_key>`. Returns an empty
  * object if the file doesn't exist yet (first run).
  *
  * @param {string} manifestPath
- * @returns {Record<string, number>}
+ * @returns {Record<string, string>}
  */
 function loadManifest(manifestPath) {
   if (!fs.existsSync(manifestPath)) {
@@ -25,7 +26,7 @@ function loadManifest(manifestPath) {
  * Keys are sorted for stable diffs across runs.
  *
  * @param {string} manifestPath
- * @param {Record<string, number>} manifest
+ * @param {Record<string, string>} manifest
  */
 function saveManifest(manifestPath, manifest) {
   fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
@@ -34,35 +35,25 @@ function saveManifest(manifestPath, manifest) {
 }
 
 /**
- * Resolves the swatch_index for a photo_key, allocating a new one if the key
- * isn't already in the manifest. Re-running for the same photo_key reuses
- * its existing index (so updating a Sim's photo doesn't grow the manifest).
- * Pure function - returns a new manifest object rather than mutating the one
- * passed in.
+ * Instance ids of the CASPs this tool already generated, from the manifest
+ * values ("0x..." hex strings).
  *
- * @param {Record<string, number>} manifest
- * @param {string} photoKey
- * @param {number} swatchCount Total number of swatches available in the template.
- * @returns {{ manifest: Record<string, number>, swatchIndex: number }}
+ * @param {Record<string, string>} manifest
+ * @returns {Set<bigint>}
  */
-function allocateSwatchIndex(manifest, photoKey, swatchCount) {
-  if (Object.prototype.hasOwnProperty.call(manifest, photoKey)) {
-    return { manifest, swatchIndex: manifest[photoKey] };
-  }
-
-  const usedIndices = new Set(Object.values(manifest));
-
-  for (let index = 0; index < swatchCount; index++) {
-    if (!usedIndices.has(index)) {
-      return { manifest: { ...manifest, [photoKey]: index }, swatchIndex: index };
-    }
-  }
-
-  throw new Error(
-    `No free swatch index for photo_key "${photoKey}": all ${swatchCount} swatches in ` +
-      "the CASP template are already assigned in the manifest. Add more swatches to the " +
-      "template (packages/casp_template) to support more Sims."
-  );
+function generatedInstances(manifest) {
+  return new Set(Object.values(manifest).map((v) => BigInt(v)));
 }
 
-module.exports = { loadManifest, saveManifest, allocateSwatchIndex };
+/**
+ * Formats a CASP instance the way the manifest stores it (and the Python
+ * mod parses it with int(value, 16)).
+ *
+ * @param {bigint} instance
+ * @returns {string}
+ */
+function formatInstance(instance) {
+  return `0x${instance.toString(16).toUpperCase().padStart(16, "0")}`;
+}
+
+module.exports = { loadManifest, saveManifest, generatedInstances, formatInstance };

@@ -3,33 +3,20 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { DdsImage } = require("@s4tk/images");
+const { PHOTO_RECT, makeSolidColorPng } = require("../../companion/src/png");
+const { blockAlphas, decodeRle2 } = require("../../companion/src/rle2");
+const { photoToRle2 } = require("../../companion/src/texture");
 
-const { makeSolidColorPng } = require("../../companion/src/png");
-const { pngBufferToDdsImage, pngBufferToTextureResource } = require("../../companion/src/texture");
+test("photoToRle2 makes a 1024x2048 RLE2 atlas, opaque only in the photo rectangle", async () => {
+  const decoded = decodeRle2(await photoToRle2(makeSolidColorPng(32, [0, 128, 255, 255])));
+  assert.equal(decoded.width, 1024);
+  assert.equal(decoded.height, 2048);
+  assert.ok(decoded.mipCount > 1, "keeps the mip chain");
 
-test("pngBufferToDdsImage produces a valid, shuffled (DST) DDS image", async () => {
-  const png = makeSolidColorPng(8, [200, 50, 50, 255]);
-  const dds = await pngBufferToDdsImage(png);
-
-  assert.equal(dds.buffer.readUInt32LE(0), DdsImage.SIGNATURE, "should start with the DDS magic bytes");
-  assert.equal(dds.isShuffled, true, "conversion must request shuffle:true (DST) for CAS Part textures");
-});
-
-test("pngBufferToDdsImage crops non-square photos before converting", async () => {
-  const { PNG } = require("pngjs");
-  const wide = new PNG({ width: 16, height: 8 });
-  wide.data.fill(128);
-  const png = PNG.sync.write(wide);
-
-  const dds = await pngBufferToDdsImage(png);
-  assert.equal(dds.buffer.readUInt32LE(0), DdsImage.SIGNATURE);
-});
-
-test("pngBufferToTextureResource wraps the DDS image in a DdsImageResource", async () => {
-  const png = makeSolidColorPng(8, [10, 200, 10, 255]);
-  const resource = await pngBufferToTextureResource(png);
-
-  assert.equal(resource.image.isShuffled, true);
-  assert.ok(resource.buffer.length > 0);
+  const blocksPerRow = 1024 / 4;
+  const alphaOfBlock = (bx, by) => blockAlphas(decoded.blocks, (by * blocksPerRow + bx) * 16);
+  const inside = alphaOfBlock(PHOTO_RECT.x / 4 + 1, PHOTO_RECT.y / 4 + 1);
+  assert.ok(inside.every((a) => a === 255));
+  assert.ok(alphaOfBlock(0, 0).every((a) => a === 0));
+  assert.ok(alphaOfBlock(PHOTO_RECT.x / 4 - 1, PHOTO_RECT.y / 4).every((a) => a === 0));
 });

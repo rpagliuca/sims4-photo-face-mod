@@ -8,7 +8,7 @@ PathLike = Union[str, os.PathLike]
 
 
 class PhotoAssignmentStore:
-    """Persists which CAS swatch index is assigned to each Sim.
+    """Persists which photo CAS part (CASP instance id) is assigned to each Sim.
 
     Keyed by sim_id alone (no save-slot bucketing): a Sim's sim_id is a
     globally unique identifier assigned once per Sim instance and stable
@@ -42,9 +42,9 @@ class PhotoAssignmentStore:
                 os.remove(tmp_path)
             raise
 
-    def assign(self, sim_id: Union[str, int], swatch_index: int) -> None:
+    def assign(self, sim_id: Union[str, int], cas_part_id: int) -> None:
         data = self._load()
-        data[str(sim_id)] = swatch_index
+        data[str(sim_id)] = cas_part_id
         self._save(data)
 
     def get(self, sim_id: Union[str, int]) -> Optional[int]:

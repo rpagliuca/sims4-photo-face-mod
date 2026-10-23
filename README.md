@@ -13,12 +13,13 @@ tecnicamente viável no engine do TS4 para esse efeito (billboard real
 ## Como funciona (visão rápida)
 
 1. Um acessório CAS (`.package`, formato DBPF) plano, preso ao osso da
-   cabeça, com N swatches (variações) reservados.
+   cabeça, no slot de óculos: o template `packages/casp_template/base.package`.
 2. Uma **companion tool** (Node.js + [Sims4Toolkit](https://github.com/sims4toolkit))
-   converte a foto do usuário e a injeta no swatch reservado para um Sim.
-3. Um **script mod** Python (`.ts4script`) rastreia qual swatch pertence a
-   qual Sim (persistente entre save/load) e aplica o acessório certo
-   automaticamente quando o jogo carrega. Um comando de console
+   clona esse acessório para cada foto (CASP novo + textura RLE2 com a foto)
+   e acumula tudo num único `.package`.
+3. Um **script mod** Python (`.ts4script`) guarda qual acessório pertence a
+   qual Sim (persistente entre save/load), o põe em todas as roupas e o
+   reaplica quando um lote termina de carregar. Um comando de console
    (`photofacemod.assign <foto>`) atribui a foto ao Sim selecionado.
 
 Documentação completa (arquitetura, build, instalação, testes) em

@@ -205,14 +205,13 @@ node src/index.js assign \
   --sim-name "Fulano"
 cd -</code></pre>
   <p>
-    <code>--photo-key</code> aloca (ou reaproveita, se já existir) um swatch livre no
-    <code>photo_manifest.json</code> — é esse arquivo que o mod Python (<code>PhotoManifest</code>) lê em
+    Cada <code>--photo-key</code> vira um acessório próprio (um CASP clonado do template, com a foto como
+    textura), registrado no <code>photo_manifest.json</code> — é esse arquivo que o mod Python (<code>PhotoManifest</code>) lê em
     runtime para resolver o comando <code>photofacemod.assign &lt;photo_key&gt;</code>. Rodar o comando de novo
     para outro Sim/foto <strong>acrescenta</strong> ao mesmo <code>--output</code> em vez de sobrescrever (o arquivo já
     existente vira a base, não o template puro), então um único <code>.package</code> acumula todos os Sims.
-    O template real é <code>packages/casp_template/base.package</code> (ver seção seguinte); os testes
-    automatizados também usam um template sintético gerado em memória
-    (<code>companion/src/syntheticTemplate.js</code>). Detalhes e exemplos completos em
+    O template é <code>packages/casp_template/base.package</code> (ver seção seguinte), e os testes
+    automatizados usam esse mesmo arquivo. Detalhes e exemplos completos em
     <code>companion/README.md</code>.
   </p>
 

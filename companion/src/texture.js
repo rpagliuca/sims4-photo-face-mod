@@ -1,48 +1,32 @@
 "use strict";
 
 const { DdsImage } = require("@s4tk/images");
-const { DdsImageResource } = require("@s4tk/models");
+const { RawResource } = require("@s4tk/models");
 
-const { cropToSquarePng } = require("./png");
-
-/**
- * Default DDS conversion options for the tosco billboard texture.
- *
- * shuffle: true -> DST5 compression, which is the format the game's CAS Part
- * texture slot expects (unshuffled DXT5 is rejected by the game as a CASP
- * texture). maxMipMaps: 1 -> skip mipmap chain generation entirely; a
- * deliberately-flat billboard photo has no business being minified nicely.
- */
-const DEFAULT_DDS_OPTIONS = { shuffle: true, maxMipMaps: 1 };
+const { buildFaceAtlasPng } = require("./png");
+const { encodeRle2FromDds } = require("./rle2");
 
 /**
- * Converts a PNG buffer into a shuffled (DST) DdsImage, cropping to a
- * centered square first so non-square photos don't get stretched.
+ * Converts a photo into the CAS Part diffuse texture the game expects: the
+ * 1024x2048 atlas (photo in the glasses region, transparent elsewhere),
+ * compressed as DXT5 with its full mip chain and run-length encoded as
+ * RLE2 - the same format Sims4Studio writes for CAS diffuse textures.
  *
- * @param {Buffer} pngBuffer Raw PNG file bytes.
- * @param {object} [options] Overrides for DDS conversion (shuffle, maxMipMaps).
- * @returns {Promise<import("@s4tk/images").DdsImage>}
+ * @param {Buffer} pngBuffer Raw PNG file bytes of the photo.
+ * @returns {Promise<Buffer>} RLE2 resource bytes.
  */
-async function pngBufferToDdsImage(pngBuffer, options = {}) {
-  const squarePng = cropToSquarePng(pngBuffer);
-  return DdsImage.fromImageAsync(squarePng, { ...DEFAULT_DDS_OPTIONS, ...options });
+async function photoToRle2(pngBuffer) {
+  const atlas = buildFaceAtlasPng(pngBuffer);
+  const dds = await DdsImage.fromImageAsync(atlas, { shuffle: false });
+  return encodeRle2FromDds(dds.buffer);
 }
 
 /**
- * Converts a PNG buffer into a DdsImageResource ready to be placed into a
- * Package at the CAS Part texture resource key.
- *
- * @param {Buffer} pngBuffer Raw PNG file bytes.
- * @param {object} [options] Overrides for DDS conversion.
- * @returns {Promise<import("@s4tk/models").DdsImageResource>}
+ * @param {Buffer} pngBuffer
+ * @returns {Promise<import("@s4tk/models").RawResource>}
  */
-async function pngBufferToTextureResource(pngBuffer, options = {}) {
-  const image = await pngBufferToDdsImage(pngBuffer, options);
-  return DdsImageResource.fromDdsImage(image, "dst");
+async function photoToTextureResource(pngBuffer) {
+  return RawResource.from(await photoToRle2(pngBuffer));
 }
 
-module.exports = {
-  DEFAULT_DDS_OPTIONS,
-  pngBufferToDdsImage,
-  pngBufferToTextureResource,
-};
+module.exports = { photoToRle2, photoToTextureResource };
